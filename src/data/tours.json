@@ -1,0 +1,201 @@
+[
+  {
+    "id": "whole-journey",
+    "title": "The whole journey",
+    "summary": "From the Planck length to the edge of the observable universe in about 90 seconds.",
+    "steps": [
+      {
+        "s": -34.5,
+        "yaw": 0.4,
+        "pitch": 0.2,
+        "seconds": 9,
+        "caption": "The Planck length: about 10⁻³⁵ metres. No experiment can reach this small, so this is an artist's idea, not a measurement."
+      },
+      {
+        "s": -25,
+        "seconds": 7,
+        "caption": "Fourteen powers of ten where no experiment has found anything at all. This gap is the edge of human knowledge."
+      },
+      {
+        "s": -14.8,
+        "yaw": -0.5,
+        "pitch": 0.15,
+        "seconds": 6,
+        "caption": "A proton, about 1.7 femtometres across. Three quarks swirl inside it, held together by gluons."
+      },
+      {
+        "s": -9.6,
+        "yaw": 0.6,
+        "seconds": 8,
+        "caption": "A carbon atom is about 150 picometres wide. Almost all of it is empty space. Its nucleus is tens of thousands of times smaller."
+      },
+      {
+        "s": -8.5,
+        "yaw": -0.3,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "DNA is only about 2 nanometres wide. Its twisted ladder of paired bases holds the instructions for building you."
+      },
+      {
+        "s": -4.3,
+        "yaw": 0.5,
+        "seconds": 7,
+        "caption": "A human skin cell, about 30 micrometres across. You are made of tens of trillions of cells like this one."
+      },
+      {
+        "s": 0.5,
+        "yaw": 0.3,
+        "pitch": 0.18,
+        "seconds": 9,
+        "caption": "You, 1.7 metres tall. From here it is about 35 powers of ten down to the Planck length and about 27 up to the universe."
+      },
+      {
+        "s": 7.35,
+        "yaw": -0.4,
+        "seconds": 7,
+        "caption": "Earth is about 12,700 kilometres across. Every person who has ever lived has lived on this one small world."
+      },
+      {
+        "s": 9.4,
+        "yaw": 0.2,
+        "seconds": 6,
+        "caption": "The Sun is about 109 Earths wide. Its light takes about eight minutes to reach us."
+      },
+      {
+        "s": 13.2,
+        "yaw": -0.3,
+        "pitch": 0.45,
+        "seconds": 7,
+        "caption": "The Solar System out to Neptune's orbit: about 9 billion kilometres across. Light needs around eight hours to cross it."
+      },
+      {
+        "s": 21.25,
+        "yaw": 0.4,
+        "pitch": 0.5,
+        "seconds": 9,
+        "caption": "The Milky Way holds hundreds of billions of stars across roughly 100,000 light-years. The Sun is one of them, about 26,000 light-years from the centre."
+      },
+      {
+        "s": 26.9,
+        "yaw": 0,
+        "pitch": 0.2,
+        "seconds": 8,
+        "caption": "The observable universe: about 93 billion light-years across. The most distant light we can see left its source over 13 billion years ago."
+      }
+    ]
+  },
+  {
+    "id": "inside-you",
+    "title": "Inside you",
+    "summary": "Zoom from a whole person into a skin cell, DNA, an atom and the quarks inside a proton.",
+    "steps": [
+      {
+        "s": 0.5,
+        "yaw": 0.3,
+        "pitch": 0.18,
+        "seconds": 6,
+        "caption": "Start with a person, about 1.7 metres tall. You are about to shrink a very long way."
+      },
+      {
+        "s": -2.5,
+        "seconds": 7,
+        "caption": "Zoom into your skin. It is only a couple of millimetres thick, and it is built from living cells."
+      },
+      {
+        "s": -4.3,
+        "yaw": 0.5,
+        "seconds": 6,
+        "caption": "A skin cell is about 30 micrometres across. Inside it, the nucleus holds your DNA."
+      },
+      {
+        "s": -8.5,
+        "yaw": -0.3,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "DNA: a double helix about 2 nanometres wide. Each of your cells holds around two metres of it, folded up tightly."
+      },
+      {
+        "s": -9.6,
+        "yaw": 0.6,
+        "seconds": 8,
+        "caption": "A single carbon atom. Its electrons are not tiny planets on tracks. They form a fuzzy cloud showing where each electron is likely to be."
+      },
+      {
+        "s": -14.0,
+        "yaw": -0.4,
+        "seconds": 7,
+        "caption": "The nucleus of carbon-12: six protons and six neutrons. It is roughly 30,000 times smaller than the atom around it."
+      },
+      {
+        "s": -14.8,
+        "yaw": 0.5,
+        "seconds": 6,
+        "caption": "Each proton and neutron is itself made of smaller particles called quarks."
+      },
+      {
+        "s": -17.3,
+        "yaw": -0.2,
+        "seconds": 8,
+        "caption": "Three quarks held together by gluons. Experiments show they are smaller than 10⁻¹⁸ metres, and nobody has ever seen a quark on its own."
+      }
+    ]
+  },
+  {
+    "id": "our-place",
+    "title": "Our place in space",
+    "summary": "From a person on Earth out to the observable universe, one step at a time.",
+    "steps": [
+      {
+        "s": 0.5,
+        "yaw": 0.3,
+        "pitch": 0.18,
+        "seconds": 6,
+        "caption": "You, standing on a headland near Wollongong. Now we zoom out, one giant leap at a time."
+      },
+      {
+        "s": 7.35,
+        "yaw": -0.4,
+        "seconds": 7,
+        "caption": "Planet Earth, about 12,700 kilometres across. The thin blue edge is the atmosphere that keeps you alive."
+      },
+      {
+        "s": 9.4,
+        "yaw": 0.2,
+        "seconds": 8,
+        "caption": "The Sun is a star about 109 Earths wide. It holds more than 99 percent of all the mass in the Solar System."
+      },
+      {
+        "s": 13.2,
+        "yaw": -0.3,
+        "pitch": 0.45,
+        "seconds": 7,
+        "caption": "The Solar System out to Neptune's orbit. The planets are tiny specks in a huge, mostly empty space."
+      },
+      {
+        "s": 16.2,
+        "seconds": 8,
+        "caption": "A light-year is the distance light travels in a year: nearly 10 trillion kilometres. The nearest star is over four light-years away."
+      },
+      {
+        "s": 21.25,
+        "yaw": 0.4,
+        "pitch": 0.5,
+        "seconds": 8,
+        "caption": "Our home galaxy, the Milky Way. The Sun sits in one of its spiral arms, about 26,000 light-years from the centre."
+      },
+      {
+        "s": 24.5,
+        "yaw": -0.3,
+        "seconds": 6,
+        "caption": "Galaxies gather into clusters and long filaments, a cosmic web with enormous empty voids between them."
+      },
+      {
+        "s": 26.9,
+        "yaw": 0,
+        "pitch": 0.2,
+        "seconds": 7,
+        "caption": "The edge of the observable universe. Because light needs time to travel, looking further away means looking further back in time."
+      }
+    ]
+  }
+]

@@ -9,6 +9,7 @@ import { Engine, type ActiveInfo } from './engine/engine';
 import type { QualityMode } from './engine/quality';
 import { clampS } from './engine/scale';
 import type { Quality } from './engine/types';
+import { mountFeatures } from './features';
 import { DESERTS, MANIFEST } from './landmarks/manifest';
 import { Anchor } from './ui/anchor';
 import { InfoCard, metaToCard } from './ui/infocard';
@@ -196,6 +197,8 @@ window.__magnitude.ready = (async () => {
   requestAnimationFrame(() => veil.classList.add('gone'));
   setTimeout(() => veil.remove(), 1600);
 })();
+
+mountFeatures(); // compare, tours, missions, time & light, sound, settings (src/features.ts)
 
 dom.canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();

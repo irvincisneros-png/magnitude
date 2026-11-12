@@ -1,0 +1,460 @@
+{
+  "note": "Outcome codes and wording are copied verbatim from the owner's existing sites. \"code\" is the school programme code (Year + unit.lesson.dot point) from the owner's NSW Junior Science sequence; \"nesaOutcome\" is the official Science 7-10 (2023) outcome code and is only filled where the owner's CellScape syllabus file links that dot point to one. Nothing here is invented: unmapped landmarks are listed under needsTeacherCheck.",
+  "sources": [
+    {
+      "file": "cellscape/content/school_sequence_7-10.json",
+      "description": "School sequence of Year 7-10 dot points (from the owner's \"NSW Junior Science Syllabus.docx\"), used in the sibling Year 7-10 sites."
+    },
+    {
+      "file": "cellscape/content/syllabus.json",
+      "description": "CellScape syllabus map: dot points of Science 7-10 (2023) with official outcome codes (e.g. SC4-CLS-01) and school codes."
+    }
+  ],
+  "fitKey": {
+    "direct": "The landmark is a direct example of the dot point.",
+    "loose": "The landmark supports the dot point but it is not the main focus; teacher judgement."
+  },
+  "outcomes": {
+    "Y8 6.2.2": {
+      "year": 8,
+      "code": "6.2.2",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Identify protons, neutrons and electrons as subatomic particles",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.5": {
+      "year": 8,
+      "code": "6.2.5",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Explain how observations made possible by new technologies have led to a more detailed understanding of atomic structure",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.3": {
+      "year": 8,
+      "code": "6.2.3",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Describe the location, relative charge and mass of protons, neutrons and electrons using the planetary atomic model",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.1": {
+      "year": 8,
+      "code": "6.2.1",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Identify the atom as the smallest unit of an element that retains the properties of that element",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.4": {
+      "year": 8,
+      "code": "6.2.4",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Outline how models of atomic structure have changed over time",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 5.1.2": {
+      "year": 10,
+      "code": "5.1.2",
+      "unit": [
+        "5.1",
+        "DNA structure and function"
+      ],
+      "text": "Observe and model the arrangement of genetic information in an organism to define and compare the terms DNA, gene, chromosome and genome",
+      "nesaOutcome": "SC5-GEV-02",
+      "nesaFocusArea": "Genetics and evolutionary change",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y10 5.1.3": {
+      "year": 10,
+      "code": "5.1.3",
+      "unit": [
+        "5.1",
+        "DNA structure and function"
+      ],
+      "text": "Relate the structure of the DNA double helix to its functions",
+      "nesaOutcome": "SC5-GEV-02",
+      "nesaFocusArea": "Genetics and evolutionary change",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 3.2.1": {
+      "year": 7,
+      "code": "3.2.1",
+      "unit": [
+        "3.2",
+        "Cells"
+      ],
+      "text": "Outline cell theory",
+      "nesaOutcome": "SC4-CLS-01",
+      "nesaFocusArea": "Cells and classification",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 3.2.3": {
+      "year": 7,
+      "code": "3.2.3",
+      "unit": [
+        "3.2",
+        "Cells"
+      ],
+      "text": "Describe the functions of the cell membrane, cytoplasm, nucleus containing DNA, mitochondria and chloroplasts",
+      "nesaOutcome": "SC4-CLS-01",
+      "nesaFocusArea": "Cells and classification",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 3.2.10": {
+      "year": 7,
+      "code": "3.2.10",
+      "unit": [
+        "3.2",
+        "Cells"
+      ],
+      "text": "Examine the relationship between structure and function for a range of specialised cells",
+      "nesaOutcome": "SC4-CLS-01",
+      "nesaFocusArea": "Cells and classification",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y8 5.1.1": {
+      "year": 8,
+      "code": "5.1.1",
+      "unit": [
+        "5.1",
+        "Body Systems"
+      ],
+      "text": "Explain the interrelationship among cells, tissues and organs",
+      "nesaOutcome": "SC4-LIV-01",
+      "nesaFocusArea": "Living systems",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 1.3.2": {
+      "year": 7,
+      "code": "1.3.2",
+      "unit": null,
+      "text": "Explain that predictable and observable phenomena on the Earth are caused by the relative positions of the Sun, the Earth and the Moon",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 7.3.9": {
+      "year": 8,
+      "code": "7.3.9",
+      "unit": [
+        "7.3",
+        "Geological change"
+      ],
+      "text": "Describe the elemental composition of the Earth and one or more other planets",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 7.1.7": {
+      "year": 8,
+      "code": "7.1.7",
+      "unit": [
+        "7.1",
+        "Energy transfers"
+      ],
+      "text": "Use representations to illustrate energy transformations, including how radiant energy from the Sun can be transformed into a different form of energy",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 6.4.6": {
+      "year": 10,
+      "code": "6.4.6",
+      "unit": [
+        "6.4",
+        "Nuclear reactions"
+      ],
+      "text": "Describe nuclear fission and nuclear fusion",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 7.3.4": {
+      "year": 10,
+      "code": "7.3.4",
+      "unit": [
+        "7.3",
+        "Light waves"
+      ],
+      "text": "Explain how the electromagnetic spectrum is used to learn about stars",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y7 1.3.1": {
+      "year": 7,
+      "code": "1.3.1",
+      "unit": null,
+      "text": "Compare historical and current solar system models to show how models are modified or rejected due to new scientific evidence",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 6.4.1": {
+      "year": 10,
+      "code": "6.4.1",
+      "unit": [
+        "6.4",
+        "Nuclear reactions"
+      ],
+      "text": "Outline how the first elements were formed after the Big Bang",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 8.2.2": {
+      "year": 8,
+      "code": "8.2.2",
+      "unit": [
+        "8.2",
+        "Scientific models"
+      ],
+      "text": "Identify that a scientific model is a representation based on data and observations of real-world phenomena",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 8.2.3": {
+      "year": 8,
+      "code": "8.2.3",
+      "unit": [
+        "8.2",
+        "Scientific models"
+      ],
+      "text": "Identify examples of the types of models used by scientists",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y7 1.5.1": {
+      "year": 7,
+      "code": "1.5.1",
+      "unit": null,
+      "text": "Investigate how a recent advancement in science has increased knowledge of the world and the Universe",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    }
+  },
+  "landmarks": {
+    "planck": {
+      "classroomUse": "Start a discussion about the limits of knowledge: what does it mean when no experiment can reach a scale? Students separate what has been measured from what is speculation using the evidence badges.",
+      "outcomes": []
+    },
+    "proton": {
+      "classroomUse": "Show that protons and neutrons are not the end of the story. Ask: what evidence tells us there is anything inside a proton, if we can never see it?",
+      "outcomes": [
+        {
+          "code": "Y8 6.2.2",
+          "fit": "direct"
+        },
+        {
+          "code": "Y8 6.2.5",
+          "fit": "loose"
+        }
+      ]
+    },
+    "nucleus": {
+      "classroomUse": "Zoom from the atom to its nucleus and count the particles in carbon-12. Students compare the size of the nucleus with the size of the whole atom.",
+      "outcomes": [
+        {
+          "code": "Y8 6.2.2",
+          "fit": "direct"
+        },
+        {
+          "code": "Y8 6.2.3",
+          "fit": "direct"
+        }
+      ]
+    },
+    "atom": {
+      "classroomUse": "Use the probability-cloud picture to compare with the planetary (Bohr) model students already know, and discuss why scientists replaced it as evidence improved.",
+      "outcomes": [
+        {
+          "code": "Y8 6.2.1",
+          "fit": "direct"
+        },
+        {
+          "code": "Y8 6.2.3",
+          "fit": "direct"
+        },
+        {
+          "code": "Y8 6.2.4",
+          "fit": "direct"
+        }
+      ]
+    },
+    "dna": {
+      "classroomUse": "Dive from a cell to the DNA double helix. Students relate the shape of the helix (two strands, paired bases) to how it stores and copies information.",
+      "outcomes": [
+        {
+          "code": "Y10 5.1.2",
+          "fit": "direct"
+        },
+        {
+          "code": "Y10 5.1.3",
+          "fit": "direct"
+        }
+      ]
+    },
+    "cell": {
+      "classroomUse": "Pair with a microscope lesson. Students name organelles in the scene and estimate how many cells would fit across a pin head.",
+      "outcomes": [
+        {
+          "code": "Y7 3.2.1",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 3.2.3",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 3.2.10",
+          "fit": "loose"
+        }
+      ]
+    },
+    "human": {
+      "classroomUse": "Use as the anchor for the whole tool: every other size is described as a number of powers of ten bigger or smaller than a person. Zoom in to see how organs, tissues and cells nest.",
+      "outcomes": [
+        {
+          "code": "Y8 5.1.1",
+          "fit": "loose"
+        }
+      ]
+    },
+    "earth": {
+      "classroomUse": "Locate Wollongong on the globe, then link day, night and seasons to the relative positions of the Sun, Earth and Moon. Compare the size of Earth with the Moon using the Compare tray.",
+      "outcomes": [
+        {
+          "code": "Y7 1.3.2",
+          "fit": "direct"
+        },
+        {
+          "code": "Y8 7.3.9",
+          "fit": "loose"
+        }
+      ]
+    },
+    "sun": {
+      "classroomUse": "Compare the Sun and Earth with the Compare tray (\"109 Earths fit across the Sun\"). Discuss where the energy in sunlight comes from.",
+      "outcomes": [
+        {
+          "code": "Y8 7.1.7",
+          "fit": "direct"
+        },
+        {
+          "code": "Y10 6.4.6",
+          "fit": "loose"
+        },
+        {
+          "code": "Y10 7.3.4",
+          "fit": "loose"
+        }
+      ]
+    },
+    "solar-system": {
+      "classroomUse": "Contrast the scale of the Solar System with textbook diagrams, which squash distances. Students compare historical and current models using the nesting notes.",
+      "outcomes": [
+        {
+          "code": "Y7 1.3.1",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 1.3.2",
+          "fit": "loose"
+        }
+      ]
+    },
+    "milky-way": {
+      "classroomUse": "Use the time and light layer to show that looking far away means looking back in time. Ask students where in the galaxy the Solar System sits.",
+      "outcomes": []
+    },
+    "universe": {
+      "classroomUse": "Finish the journey at the edge of the observable universe. Link to the Big Bang and the formation of the first elements, and discuss why we can only see a limited part of the universe.",
+      "outcomes": [
+        {
+          "code": "Y10 6.4.1",
+          "fit": "loose"
+        },
+        {
+          "code": "Y10 7.3.4",
+          "fit": "loose"
+        }
+      ]
+    }
+  },
+  "wholeTool": {
+    "outcomes": [
+      {
+        "code": "Y8 8.2.2",
+        "fit": "direct"
+      },
+      {
+        "code": "Y8 8.2.3",
+        "fit": "direct"
+      },
+      {
+        "code": "Y7 1.5.1",
+        "fit": "loose"
+      }
+    ]
+  },
+  "needsTeacherCheck": [
+    {
+      "id": "planck",
+      "reason": "None of the owner's sequence documents has a dot point about the Planck scale, quantum gravity or the limits of measurement. Left unmapped."
+    },
+    {
+      "id": "milky-way",
+      "reason": "No dot point in the owner's sources is about galaxies. Y10 7.3.4 (learning about stars from the electromagnetic spectrum) is the nearest verified dot point, but it is about stars, so it is not applied automatically.",
+      "candidates": [
+        "Y10 7.3.4"
+      ]
+    }
+  ]
+}
