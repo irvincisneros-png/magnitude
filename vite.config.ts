@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   base: './',
-  server: { port: 8520, strictPort: true, host: '127.0.0.1' },
-  preview: { port: 8521, strictPort: true, host: '127.0.0.1' },
-  build: { target: 'es2022', chunkSizeWarningLimit: 900 },
+  server: { port: 8520, strictPort: true },
+  preview: { port: 8521, strictPort: true },
+  build: { target: 'es2022', chunkSizeWarningLimit: 900, assetsDir: 'build' }, // public/assets/<id>/ stays separate
   test: { include: ['tests/**/*.test.ts'], environment: 'node' },
 });
