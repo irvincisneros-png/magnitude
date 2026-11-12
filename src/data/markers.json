@@ -1,0 +1,698 @@
+[
+  {
+    "id": "electron",
+    "name": "Electron (size upper limit)",
+    "sizeMeters": 1e-18,
+    "category": "quantum",
+    "evidence": "measured",
+    "blurb": "Electrons behave as point particles, so no true size has been measured. Experiments set only an upper limit of about 10⁻¹⁸ metres.",
+    "howWeKnow": {
+      "instrument": "High-energy electron scattering",
+      "text": "Collisions between electrons and other particles show no internal structure down to about 10⁻¹⁸ m, which gives only an upper limit on its size."
+    }
+  },
+  {
+    "id": "neutron",
+    "name": "Neutron",
+    "sizeMeters": 1.6e-15,
+    "category": "quantum",
+    "evidence": "measured",
+    "blurb": "A neutron is a particle found in atomic nuclei. It is about 1.6 femtometres across, tens of thousands of times smaller than an atom.",
+    "howWeKnow": {
+      "instrument": "Electron and particle scattering experiments",
+      "text": "Scattering experiments fire particles at neutrons and measure how they spread out, giving a size of roughly 1.6 femtometres; the value is approximate."
+    }
+  },
+  {
+    "id": "uranium-nucleus",
+    "name": "Uranium-238 nucleus",
+    "sizeMeters": 1.5e-14,
+    "category": "atomic",
+    "evidence": "measured",
+    "blurb": "The nucleus of uranium-238, the most common uranium isotope, is about 15 femtometres across. It holds 92 protons and 146 neutrons.",
+    "howWeKnow": {
+      "instrument": "Electron scattering",
+      "text": "Electrons fired at the nucleus are deflected by its charge spread, and the pattern gives a radius of about 7 femtometres."
+    }
+  },
+  {
+    "id": "electron-compton-wavelength",
+    "name": "Electron Compton wavelength",
+    "sizeMeters": 2.43e-12,
+    "category": "quantum",
+    "evidence": "modelled",
+    "blurb": "A length calculated from the electron's mass, Planck's constant and the speed of light. Below this scale, quantum effects of electrons dominate.",
+    "howWeKnow": {
+      "instrument": "Calculation from measured physical constants",
+      "text": "Planck's constant divided by the electron's mass times the speed of light gives about 2.43 picometres."
+    }
+  },
+  {
+    "id": "hydrogen-atom",
+    "name": "Hydrogen atom",
+    "sizeMeters": 1.06e-10,
+    "category": "atomic",
+    "evidence": "modelled",
+    "blurb": "Hydrogen is the simplest atom, with one proton and one electron. The atom is about 0.1 nanometres across, set by where the electron is likely to be.",
+    "howWeKnow": {
+      "instrument": "Quantum mechanical model",
+      "text": "Solving the Schrödinger equation for hydrogen gives a Bohr radius of about 0.053 nanometres, so the atom is about twice that across."
+    }
+  },
+  {
+    "id": "iron-atom",
+    "name": "Iron atom",
+    "sizeMeters": 2.5e-10,
+    "category": "atomic",
+    "evidence": "measured",
+    "blurb": "Iron atoms in solid metal pack together like tiny spheres. Each is about a quarter of a nanometre across.",
+    "howWeKnow": {
+      "instrument": "X-ray diffraction",
+      "text": "X-ray patterns from iron crystals reveal the spacing between atoms, giving an atomic radius of roughly 126 picometres."
+    }
+  },
+  {
+    "id": "water-molecule",
+    "name": "Water molecule",
+    "sizeMeters": 2.8e-10,
+    "category": "molecular",
+    "evidence": "measured",
+    "blurb": "A water molecule is one oxygen atom bonded to two hydrogen atoms at an angle of about 105 degrees. It is roughly 0.28 nanometres across.",
+    "howWeKnow": {
+      "instrument": "Microwave spectroscopy",
+      "text": "Microwave spectra reveal bond lengths and angles, from which the overall molecular size of about 0.28 nanometres is calculated."
+    }
+  },
+  {
+    "id": "caesium-atom",
+    "name": "Caesium atom",
+    "sizeMeters": 5.3e-10,
+    "category": "atomic",
+    "evidence": "measured",
+    "blurb": "Caesium is one of the largest stable atoms. Its outer electron sits far from the nucleus, which is why it is used in atomic clocks.",
+    "howWeKnow": {
+      "instrument": "X-ray diffraction",
+      "text": "The metallic radius of caesium, about 265 picometres, is found from X-ray crystal patterns, giving a diameter near 0.53 nanometres."
+    }
+  },
+  {
+    "id": "glucose",
+    "name": "Glucose molecule",
+    "sizeMeters": 7e-10,
+    "category": "molecular",
+    "evidence": "modelled",
+    "blurb": "Glucose is a simple sugar that cells use for energy. The molecule is roughly 0.7 nanometres across, depending on how it is oriented.",
+    "howWeKnow": {
+      "instrument": "X-ray crystallography and molecular modelling",
+      "text": "Crystal structures give atomic positions, and modelling the bond geometry gives an approximate overall size of 0.7 nanometres."
+    }
+  },
+  {
+    "id": "buckminsterfullerene",
+    "name": "Buckminsterfullerene (buckyball)",
+    "sizeMeters": 7.1e-10,
+    "category": "molecular",
+    "evidence": "measured",
+    "blurb": "Buckminsterfullerene is a cage of 60 carbon atoms shaped like a football. The cage is about 0.7 nanometres across.",
+    "howWeKnow": {
+      "instrument": "X-ray diffraction",
+      "text": "X-ray crystallography of solid samples gives a cage diameter of about 0.71 nanometres between the centres of opposite atoms."
+    }
+  },
+  {
+    "id": "haemoglobin",
+    "name": "Haemoglobin",
+    "sizeMeters": 6.4e-9,
+    "category": "molecular",
+    "evidence": "measured",
+    "blurb": "Haemoglobin is the protein in red blood cells that carries oxygen. The molecule is about 6 nanometres across.",
+    "howWeKnow": {
+      "instrument": "X-ray crystallography",
+      "text": "Crystal structures of haemoglobin, first solved in the 1960s, show a molecule roughly 6.4 by 5.5 nanometres in size."
+    }
+  },
+  {
+    "id": "ribosome",
+    "name": "Ribosome",
+    "sizeMeters": 2.5e-8,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "Ribosomes are molecular machines that build proteins by following instructions carried in RNA. They are about 25 nanometres across, too small for light microscopes.",
+    "howWeKnow": {
+      "instrument": "Cryo-electron microscopy",
+      "text": "Cryo-electron microscopy of frozen ribosomes gives their three-dimensional shape, which measures roughly 20 to 30 nanometres across."
+    }
+  },
+  {
+    "id": "hiv-virus",
+    "name": "HIV virus",
+    "sizeMeters": 1.2e-7,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "HIV, the virus that causes AIDS, is a roughly spherical particle about 120 nanometres across. Light microscopes cannot resolve it.",
+    "howWeKnow": {
+      "instrument": "Electron microscopy",
+      "text": "Electron microscope images of purified virus particles show diameters of about 120 nanometres, varying a little between particles."
+    }
+  },
+  {
+    "id": "green-light",
+    "name": "Green light (wavelength)",
+    "sizeMeters": 5.5e-7,
+    "category": "quantum",
+    "evidence": "measured",
+    "blurb": "Visible light is a wave with wavelengths from about 380 to 700 nanometres. Green light sits near 550 nanometres, where human eyes are most sensitive.",
+    "howWeKnow": {
+      "instrument": "Diffraction grating spectrometer",
+      "text": "A diffraction grating splits white light into colours, and measuring the angle of each colour gives its wavelength, about 550 nanometres for green."
+    }
+  },
+  {
+    "id": "e-coli",
+    "name": "E. coli bacterium",
+    "sizeMeters": 0.000002,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "Escherichia coli is a rod-shaped bacterium that lives in the guts of humans and other animals. A typical cell is about 2 micrometres long.",
+    "howWeKnow": {
+      "instrument": "Light microscopy",
+      "text": "Microscopes measure the length of cultured cells, which typically falls around 2 micrometres."
+    }
+  },
+  {
+    "id": "red-blood-cell",
+    "name": "Red blood cell",
+    "sizeMeters": 0.000007,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "Red blood cells are flexible discs that carry oxygen around the body. Each is about 7 micrometres across and squeezes through capillaries narrower than itself.",
+    "howWeKnow": {
+      "instrument": "Light microscopy",
+      "text": "Measured on stained blood smears under a microscope, healthy adult red blood cells average around 7 micrometres in diameter."
+    }
+  },
+  {
+    "id": "human-sperm-cell",
+    "name": "Human sperm cell",
+    "sizeMeters": 0.00005,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "A human sperm cell has a head and a long tail, with a total length of roughly 50 micrometres. The head carries the father's genetic material.",
+    "howWeKnow": {
+      "instrument": "Light microscopy",
+      "text": "Microscope measurements show a total length of about 50 to 60 micrometres, including the tail."
+    }
+  },
+  {
+    "id": "human-hair-width",
+    "name": "Human hair (width)",
+    "sizeMeters": 0.00007,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "A typical human hair is about 70 micrometres across. Thickness varies from person to person and across the same person's head.",
+    "howWeKnow": {
+      "instrument": "Light microscopy",
+      "text": "Cross-sections of hair viewed under a microscope show diameters mostly between about 50 and 100 micrometres."
+    }
+  },
+  {
+    "id": "dust-mite",
+    "name": "House dust mite",
+    "sizeMeters": 0.0003,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "House dust mites are tiny relatives of spiders. Adults are about 0.3 millimetres long and feed on flakes of dead skin.",
+    "howWeKnow": {
+      "instrument": "Light microscopy",
+      "text": "Adult dust mites are measured under a microscope and are typically 0.2 to 0.3 millimetres long."
+    }
+  },
+  {
+    "id": "grain-of-sand",
+    "name": "Grain of sand",
+    "sizeMeters": 0.0005,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "A typical sand grain is about 0.5 millimetres across. Sand is loose rock and mineral grains between 0.06 and 2 millimetres in size.",
+    "howWeKnow": {
+      "instrument": "Sieve analysis",
+      "text": "Sand is sorted by passing it through stacked sieves with known mesh sizes, which reveals the range of grain sizes."
+    }
+  },
+  {
+    "id": "black-garden-ant",
+    "name": "Black garden ant (worker)",
+    "sizeMeters": 0.004,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "Ants are social insects, and this common black garden ant worker is about 4 millimetres long. Colonies can contain thousands of workers.",
+    "howWeKnow": {
+      "instrument": "Calipers on preserved specimens",
+      "text": "Length is measured on preserved specimens from head to the tip of the abdomen, typically 3 to 5 millimetres for this species."
+    }
+  },
+  {
+    "id": "human-eyeball",
+    "name": "Human eyeball",
+    "sizeMeters": 0.024,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "The human eyeball is roughly a sphere about 24 millimetres across. Light enters through the cornea and is focused onto the retina.",
+    "howWeKnow": {
+      "instrument": "Ultrasound biometry",
+      "text": "Ultrasound measurements of the eye's length, routinely taken in eye clinics, give about 24 millimetres in adults."
+    }
+  },
+  {
+    "id": "human-heart",
+    "name": "Human heart",
+    "sizeMeters": 0.12,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "An adult human heart is about 12 centimetres long and roughly the size of a fist. At rest it pumps around 5 litres of blood per minute.",
+    "howWeKnow": {
+      "instrument": "MRI and anatomical measurement",
+      "text": "Medical imaging measures the heart's length from base to apex, which averages about 12 centimetres in adults."
+    }
+  },
+  {
+    "id": "human-brain",
+    "name": "Human brain",
+    "sizeMeters": 0.16,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "An adult human brain is about 16 centimetres long from front to back. Its folded surface is packed with billions of nerve cells.",
+    "howWeKnow": {
+      "instrument": "MRI brain scans",
+      "text": "MRI scans measure the brain's maximum length from front to back, averaging about 16 centimetres in adults, though this varies between people."
+    }
+  },
+  {
+    "id": "giraffe",
+    "name": "Giraffe (height)",
+    "sizeMeters": 5.5,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "The tallest living land animal. An adult male giraffe stands about 5.5 metres tall, more than three times the height of a person.",
+    "howWeKnow": {
+      "instrument": "Direct measurement",
+      "text": "Zoologists measure wild and captive giraffes directly; adult males reach about 5 to 6 metres."
+    }
+  },
+  {
+    "id": "blue-whale",
+    "name": "Blue whale",
+    "sizeMeters": 25,
+    "category": "biological",
+    "evidence": "measured",
+    "blurb": "The blue whale is the largest animal known to have lived. Adults are typically about 25 metres long, roughly the length of two buses.",
+    "howWeKnow": {
+      "instrument": "Body length measurements and aerial photogrammetry",
+      "text": "Recorded lengths from whaling records and aerial photographs give adult averages of about 25 metres, with the largest near 30 metres."
+    }
+  },
+  {
+    "id": "great-pyramid-of-giza",
+    "name": "Great Pyramid of Giza (base side)",
+    "sizeMeters": 230.4,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "Built for the pharaoh Khufu about 4,500 years ago, each side of its base is about 230 metres long. It was the tallest human-made structure for nearly 3,800 years.",
+    "howWeKnow": {
+      "instrument": "Surveying and laser measurement",
+      "text": "Modern surveys with laser and GPS instruments measure each side of the base at about 230 metres."
+    }
+  },
+  {
+    "id": "burj-khalifa",
+    "name": "Burj Khalifa",
+    "sizeMeters": 828,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "Burj Khalifa in Dubai, completed in 2010, stands 828 metres tall, the tallest building in the world when it opened.",
+    "howWeKnow": {
+      "instrument": "Official height survey (CTBUH)",
+      "text": "The Council on Tall Buildings and Urban Habitat measures height to the top of the structure, giving 828 metres."
+    }
+  },
+  {
+    "id": "sydney-harbour-bridge",
+    "name": "Sydney Harbour Bridge",
+    "sizeMeters": 1149,
+    "category": "human",
+    "evidence": "measured",
+    "blurb": "Opened in 1932, the Sydney Harbour Bridge is about 1.15 kilometres long including its approaches. Its central steel arch spans 503 metres.",
+    "howWeKnow": {
+      "instrument": "Engineering survey plans",
+      "text": "Engineering records and surveys give a total length of 1,149 metres and an arch span of 503 metres."
+    }
+  },
+  {
+    "id": "uluru",
+    "name": "Uluru",
+    "sizeMeters": 3600,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Uluru is a huge sandstone rock in central Australia, about 3.6 kilometres long. It rises about 348 metres above the surrounding plain.",
+    "howWeKnow": {
+      "instrument": "Ground and aerial surveying",
+      "text": "Survey measurements of the rock's base give a length of around 3.6 kilometres and a perimeter of about 9.4 kilometres."
+    }
+  },
+  {
+    "id": "mount-everest",
+    "name": "Mount Everest",
+    "sizeMeters": 8849,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Mount Everest, on the Nepal–China border, is the highest mountain above sea level, at 8,849 metres.",
+    "howWeKnow": {
+      "instrument": "GNSS satellite survey",
+      "text": "A 2020 joint survey by Nepal and China used satellite positioning to measure the summit at 8,848.86 metres above sea level."
+    }
+  },
+  {
+    "id": "neutron-star",
+    "name": "Neutron star",
+    "sizeMeters": 24000,
+    "category": "stellar",
+    "evidence": "modelled",
+    "blurb": "A neutron star is the dense core left after a massive star explodes. It packs more mass than the Sun into a sphere about 24 kilometres across.",
+    "howWeKnow": {
+      "instrument": "X-ray timing from space telescopes",
+      "text": "X-ray timing from telescopes such as NICER constrains neutron star radii to roughly 10 to 13 kilometres, so the diameter is about 24 kilometres."
+    }
+  },
+  {
+    "id": "pluto",
+    "name": "Pluto",
+    "sizeMeters": 2377000,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Pluto is a dwarf planet beyond Neptune, about 2,380 kilometres across. That makes it smaller than Earth's Moon.",
+    "howWeKnow": {
+      "instrument": "Spacecraft imaging (New Horizons)",
+      "text": "The New Horizons flyby in 2015 imaged Pluto and measured its diameter at about 2,377 kilometres."
+    }
+  },
+  {
+    "id": "moon",
+    "name": "Moon",
+    "sizeMeters": 3474800,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Earth's Moon is about 3,475 kilometres across, roughly a quarter of Earth's width.",
+    "howWeKnow": {
+      "instrument": "Laser ranging and spacecraft imaging",
+      "text": "Spacecraft and Earth-based measurements give a mean lunar diameter of about 3,474.8 kilometres."
+    }
+  },
+  {
+    "id": "australia-width",
+    "name": "Australia (east–west width)",
+    "sizeMeters": 4000000,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Mainland Australia stretches about 4,000 kilometres from east to west, so a coast-to-coast drive takes days.",
+    "howWeKnow": {
+      "instrument": "Map surveys and satellite imaging",
+      "text": "Positions of the eastern and western extremes, measured on maps and satellite images, give an east–west span of about 4,000 kilometres."
+    }
+  },
+  {
+    "id": "mars",
+    "name": "Mars",
+    "sizeMeters": 6779000,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Mars is the fourth planet from the Sun and about 6,800 kilometres across. Its width is roughly half that of Earth.",
+    "howWeKnow": {
+      "instrument": "Spacecraft radio tracking and imaging",
+      "text": "Orbiters and radio tracking give Mars a mean diameter of about 6,779 kilometres."
+    }
+  },
+  {
+    "id": "sirius-b",
+    "name": "Sirius B",
+    "sizeMeters": 12000000,
+    "category": "stellar",
+    "evidence": "modelled",
+    "blurb": "Sirius B is a white dwarf, the dense leftover core of a star, and it is about the size of Earth. It orbits the bright star Sirius A.",
+    "howWeKnow": {
+      "instrument": "Hubble Space Telescope imaging and stellar models",
+      "text": "Hubble imaging gives the orbit and mass, and white dwarf models then give a radius of about 6,000 kilometres."
+    }
+  },
+  {
+    "id": "jupiter",
+    "name": "Jupiter",
+    "sizeMeters": 142984000,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "Jupiter is the largest planet in the Solar System, about 143,000 kilometres across at its equator.",
+    "howWeKnow": {
+      "instrument": "Spacecraft flybys and imaging",
+      "text": "Measured by spacecraft and telescopes, Jupiter's equatorial diameter is about 142,984 kilometres."
+    }
+  },
+  {
+    "id": "proxima-centauri",
+    "name": "Proxima Centauri",
+    "sizeMeters": 214000000,
+    "category": "stellar",
+    "evidence": "modelled",
+    "blurb": "Proxima Centauri is a small red dwarf and the nearest star to the Sun. Its diameter is about 15 per cent of the Sun's.",
+    "howWeKnow": {
+      "instrument": "Stellar models and brightness measurements",
+      "text": "Stellar models estimate its radius at about 0.15 solar radii, so its diameter is roughly 15 per cent of the Sun's."
+    }
+  },
+  {
+    "id": "earth-moon-distance",
+    "name": "Earth–Moon distance",
+    "sizeMeters": 384400000,
+    "category": "planetary",
+    "evidence": "measured",
+    "blurb": "The Moon orbits Earth at an average distance of about 384,400 kilometres. Lasers bounced off mirrors left on the Moon measure this to within millimetres.",
+    "howWeKnow": {
+      "instrument": "Lunar laser ranging",
+      "text": "Lasers fired from Earth reflect off retroreflectors left by Apollo missions, and timing the round trip gives the distance precisely."
+    }
+  },
+  {
+    "id": "sirius-a",
+    "name": "Sirius A",
+    "sizeMeters": 2400000000,
+    "category": "stellar",
+    "evidence": "measured",
+    "blurb": "Sirius A, the brightest star in the night sky, is about 1.7 times the Sun's diameter and roughly 25 times as luminous.",
+    "howWeKnow": {
+      "instrument": "Stellar interferometry",
+      "text": "Interferometry from the ground measures the angular size of Sirius A, which with its distance gives a diameter of about 2.4 million kilometres."
+    }
+  },
+  {
+    "id": "astronomical-unit",
+    "name": "1 astronomical unit",
+    "sizeMeters": 149597870700,
+    "category": "stellar",
+    "evidence": "measured",
+    "blurb": "One astronomical unit is the average distance from Earth to the Sun, about 150 million kilometres. It is now defined as exactly 149,597,870,700 metres.",
+    "howWeKnow": {
+      "instrument": "Radar and spacecraft ranging",
+      "text": "Radar echoes and spacecraft tracking first measured this distance; since 2012 it has been fixed by definition at exactly 149,597,870,700 metres."
+    }
+  },
+  {
+    "id": "betelgeuse",
+    "name": "Betelgeuse",
+    "sizeMeters": 1060000000000,
+    "category": "stellar",
+    "evidence": "modelled",
+    "blurb": "Betelgeuse is a red supergiant in Orion. Its diameter is roughly 760 times the Sun’s, though estimates vary because its surface pulsates.",
+    "howWeKnow": {
+      "instrument": "Radio and infrared interferometry",
+      "text": "Interferometry resolves the star's disc, and with its distance this implies a diameter of roughly one billion kilometres."
+    }
+  },
+  {
+    "id": "kuiper-belt",
+    "name": "Kuiper belt",
+    "sizeMeters": 15000000000000,
+    "category": "stellar",
+    "evidence": "modelled",
+    "blurb": "The Kuiper belt is a ring of icy bodies beyond Neptune, spanning roughly 30 to 50 astronomical units from the Sun. Pluto is one of its best-known members.",
+    "howWeKnow": {
+      "instrument": "Telescope surveys of distant objects",
+      "text": "Surveys of distant icy bodies map where they orbit, giving a belt roughly 100 astronomical units across; its outer edge is approximate."
+    }
+  },
+  {
+    "id": "light-year",
+    "name": "1 light-year",
+    "sizeMeters": 9460000000000000,
+    "category": "stellar",
+    "evidence": "measured",
+    "blurb": "One light-year is the distance light travels in one Julian year, about 9.46 trillion kilometres.",
+    "howWeKnow": {
+      "instrument": "Calculation from the speed of light",
+      "text": "It is found by multiplying the exact speed of light, 299,792,458 metres per second, by one Julian year of 31,557,600 seconds."
+    }
+  },
+  {
+    "id": "oort-cloud",
+    "name": "Oort cloud",
+    "sizeMeters": 29900000000000000,
+    "category": "stellar",
+    "evidence": "speculative",
+    "blurb": "The Oort cloud is a vast, hypothetical shell of icy bodies that may reach about 100,000 astronomical units from the Sun. No one has seen it directly.",
+    "howWeKnow": {
+      "instrument": "Orbits of long-period comets",
+      "text": "Long-period comets seem to come from a distant reservoir; its outer edge is inferred at around 100,000 AU, so the cloud is roughly 200,000 AU across."
+    }
+  },
+  {
+    "id": "alpha-centauri-distance",
+    "name": "Distance to Alpha Centauri",
+    "sizeMeters": 41300000000000000,
+    "category": "stellar",
+    "evidence": "measured",
+    "blurb": "Alpha Centauri, the nearest star system to the Sun, is about 4.4 light-years away. Its light takes over four years to reach us.",
+    "howWeKnow": {
+      "instrument": "Stellar parallax",
+      "text": "The tiny yearly shift in the star's apparent position, as Earth orbits the Sun, gives a distance of about 4.37 light-years."
+    }
+  },
+  {
+    "id": "orion-nebula",
+    "name": "Orion Nebula",
+    "sizeMeters": 230000000000000000,
+    "category": "galactic",
+    "evidence": "modelled",
+    "blurb": "The Orion Nebula is a glowing cloud of gas and dust where new stars are forming. It is about 1,300 light-years away and visible to the naked eye.",
+    "howWeKnow": {
+      "instrument": "Telescope imaging and parallax distance",
+      "text": "The cloud's apparent size in telescope images, combined with its distance, gives a width of roughly 24 light-years; estimates vary."
+    }
+  },
+  {
+    "id": "omega-centauri",
+    "name": "Omega Centauri",
+    "sizeMeters": 1400000000000000000,
+    "category": "galactic",
+    "evidence": "modelled",
+    "blurb": "Omega Centauri is the largest known globular cluster in the Milky Way, holding millions of ancient stars. It is about 17,000 light-years away.",
+    "howWeKnow": {
+      "instrument": "Star count surveys and cluster modelling",
+      "text": "Star count surveys and cluster models give a diameter of roughly 150 light-years, though its outer edge is fuzzy."
+    }
+  },
+  {
+    "id": "large-magellanic-cloud",
+    "name": "Large Magellanic Cloud",
+    "sizeMeters": 300000000000000000000,
+    "category": "galactic",
+    "evidence": "modelled",
+    "blurb": "The Large Magellanic Cloud is a satellite galaxy of the Milky Way, about 160,000 light-years away. It is roughly 32,000 light-years across.",
+    "howWeKnow": {
+      "instrument": "Cepheid variable star distances",
+      "text": "Cepheid variable stars place the cloud about 160,000 light-years away, and its extent on the sky gives a size of roughly 32,000 light-years."
+    }
+  },
+  {
+    "id": "triangulum-galaxy-m33",
+    "name": "Triangulum Galaxy (M33)",
+    "sizeMeters": 550000000000000000000,
+    "category": "galactic",
+    "evidence": "modelled",
+    "blurb": "The Triangulum Galaxy, also called M33, is a spiral galaxy about 2.7 million light-years away. It is one of the largest members of the Local Group.",
+    "howWeKnow": {
+      "instrument": "Cepheid distance and apparent sky size",
+      "text": "Its apparent size on the sky, combined with a distance of about 2.7 million light-years, gives a diameter of roughly 50,000 to 60,000 light-years."
+    }
+  },
+  {
+    "id": "andromeda-galaxy",
+    "name": "Andromeda Galaxy",
+    "sizeMeters": 2.1e+21,
+    "category": "galactic",
+    "evidence": "measured",
+    "blurb": "The Andromeda Galaxy is the nearest large spiral galaxy, about 2.5 million light-years away. It is about 220,000 light-years across.",
+    "howWeKnow": {
+      "instrument": "Cepheid variable star distances",
+      "text": "Cepheid variable stars place Andromeda about 2.5 million light-years away, and its apparent size then gives a diameter near 220,000 light-years."
+    }
+  },
+  {
+    "id": "local-group",
+    "name": "Local Group",
+    "sizeMeters": 9.5e+22,
+    "category": "cosmic",
+    "evidence": "modelled",
+    "blurb": "The Local Group is a cluster of more than 50 galaxies, including the Milky Way and Andromeda. It is roughly 10 million light-years across.",
+    "howWeKnow": {
+      "instrument": "Galaxy surveys and distance measurements",
+      "text": "Distance measurements of its member galaxies place them within a region roughly 3 megaparsecs, about 10 million light-years, across."
+    }
+  },
+  {
+    "id": "virgo-supercluster",
+    "name": "Virgo Supercluster",
+    "sizeMeters": 1e+24,
+    "category": "cosmic",
+    "evidence": "modelled",
+    "blurb": "The Virgo Supercluster is a vast group of galaxy clusters and groups, and it contains the Local Group. It spans roughly 100 million light-years.",
+    "howWeKnow": {
+      "instrument": "Galaxy redshift surveys",
+      "text": "Redshift surveys map where galaxies lie in three dimensions, and the supercluster's extent is estimated at around 30 megaparsecs."
+    }
+  },
+  {
+    "id": "bootes-void",
+    "name": "Boötes Void",
+    "sizeMeters": 3.1e+24,
+    "category": "cosmic",
+    "evidence": "measured",
+    "blurb": "The Boötes Void is an enormous region of space containing very few galaxies. It is roughly 330 million light-years across and was found in 1981.",
+    "howWeKnow": {
+      "instrument": "Galaxy redshift survey",
+      "text": "Redshift measurements of galaxies around the void show it spans roughly 330 million light-years, although its edges are uncertain."
+    }
+  },
+  {
+    "id": "laniakea",
+    "name": "Laniakea",
+    "sizeMeters": 4.7e+24,
+    "category": "cosmic",
+    "evidence": "modelled",
+    "blurb": "Laniakea is the vast supercluster that contains the Milky Way and our Local Group. It is about 500 million light-years across.",
+    "howWeKnow": {
+      "instrument": "Mapping galaxy velocities",
+      "text": "Mapping how galaxies are moving across the local universe reveals a flow towards a common centre, which defines a supercluster about 500 million light-years across."
+    }
+  },
+  {
+    "id": "sloan-great-wall",
+    "name": "Sloan Great Wall",
+    "sizeMeters": 1.3e+25,
+    "category": "cosmic",
+    "evidence": "measured",
+    "blurb": "The Sloan Great Wall is one of the largest known structures in the universe, a sheet of galaxies over one billion light-years long.",
+    "howWeKnow": {
+      "instrument": "Sloan Digital Sky Survey redshifts",
+      "text": "Redshift data from the Sloan Digital Sky Survey trace galaxies along a wall about 1.37 billion light-years long."
+    }
+  },
+  {
+    "id": "hubble-sphere",
+    "name": "Hubble sphere",
+    "sizeMeters": 2.7e+26,
+    "category": "cosmic",
+    "evidence": "modelled",
+    "blurb": "The Hubble sphere is the distance at which galaxies recede from us at the speed of light, given today's expansion rate. Its diameter is about 28 billion light-years.",
+    "howWeKnow": {
+      "instrument": "Hubble constant measurements",
+      "text": "Dividing the speed of light by the measured Hubble constant gives a radius of about 14 billion light-years, so the sphere is roughly 28 billion light-years across."
+    }
+  }
+]
