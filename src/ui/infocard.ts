@@ -28,6 +28,13 @@ export const metaToCard = (m: LandmarkMeta, index?: string): CardContent => ({
   nestingNote: m.nesting === 'comparison' ? m.nestingNote ?? 'Objects here are shown side by side for size, not at their true distances.' : undefined,
 });
 
+/**
+ * Identity of what a card shows. Must change when a placeholder (id + name only, "Loading…")
+ * is replaced by the real meta, otherwise show() would skip the re-render and the card stays stuck.
+ */
+export const cardKey = (c: CardContent): string =>
+  `${c.id}|${c.name}|${c.evidence ?? ''}|${c.howWeKnow?.text ? 1 : 0}|${c.nestingNote ?? ''}|${c.blurb}`;
+
 export class InfoCard {
   readonly el: HTMLElement;
   private inner: HTMLElement;
@@ -48,7 +55,7 @@ export class InfoCard {
   }
 
   show(c: CardContent) {
-    const key = `${c.id}|${c.name}`;
+    const key = cardKey(c);
     if (key === this.current) return;
     const first = this.current === '';
     this.current = key;

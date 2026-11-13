@@ -243,7 +243,7 @@ button { font: inherit; color: inherit; }
 .label { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
 .label span {
   position: absolute; left: 0; bottom: 12px; transform: translateX(-50%); white-space: nowrap;
-  font-size: 10.5px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink);
+  font-size: 11.5px; font-weight: 500; letter-spacing: 0.06em; color: var(--ink);
   text-shadow: 0 0 14px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 .label::after {
