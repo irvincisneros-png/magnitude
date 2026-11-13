@@ -167,7 +167,6 @@ const factory: LandmarkFactory = (): Landmark => {
       scene.add(sea.group);
       // settle the quark motion so the first frame is not frozen in the start pose
       for (let i = 0; i < 90; i++) step(1 / 60);
-      if (location.search.includes('debug')) (window as unknown as Record<string, unknown>).__proton = { scene, field, sea };
     },
     update(f: FrameState) {
       if (!field || !sea) return;
@@ -179,6 +178,9 @@ const factory: LandmarkFactory = (): Landmark => {
       fu.uCam.value.copy(f.camera.position);
       for (let i = 0; i < 3; i++) { fu.uQ.value[i].copy(pos[i]); fu.uQC.value[i].copy(colNow[i]); }
       fu.uJ.value.copy(junction);
+      let tr = 0;
+      for (let i = 0; i < 3; i++) tr = Math.max(tr, pos[i].distanceTo(junction));
+      fu.uTubeR.value = tr + 0.09;
       fu.uSparkP.value.copy(sparkPos);
       fu.uSparkC.value.copy(sparkCol);
       const sparkEnv = exA >= 0 ? Math.sin(Math.PI * Math.min(exT, 1)) : 0;

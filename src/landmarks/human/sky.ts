@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { COMMON, type Shared } from './glsl';
 import { FEET_H } from './figureSdf';
+import { DEPTH } from './terrain';
 
 const quadVert = /* glsl */ `
 varying vec2 vNdc;
@@ -14,7 +15,7 @@ void main() { vNdc = position.xy; gl_Position = vec4(position.xy, 1.0, 1.0); }`;
 
 const skyFrag = /* glsl */ `
 ${COMMON}
-uniform mat4 uInvProj; uniform mat4 uCamRot;
+uniform mat4 uInvProj; uniform mat4 uCamRot; uniform float uBackdrop; uniform vec3 uFeetW; uniform sampler2D tDepth;
 varying vec2 vNdc;
 void main() {
   vec4 vp = uInvProj * vec4(vNdc, 1.0, 1.0);
@@ -40,6 +41,31 @@ void main() {
     c *= smoothstep(0.02, 0.18, dir.y) * (1.0 - smoothstep(0.4, 0.9, camAlt / layer));
     vec3 cc = vec3(1.0, 0.93, 0.85) * (uSunCol * 0.32 * (0.6 + 0.8 * pow(max(mu, 1e-6), 6.0))) + skyCol(vec3(0, 1, 0)) * 0.6;
     col = mix(col, cc, c);
+  }
+  // close-up backdrop: the headland and the bay, as a defocused macro background (the real
+  // terrain, grass and sea are switched off at skin scale, where they would be out of focus anyway)
+  if (uBackdrop > 0.0 && dir.y < 0.0) {
+    // find where the view ray meets the ground, using the baked height map (two refinements)
+    float y0 = GROUND_Y;
+    vec3 hit = uCamM + dir * ((y0 - uCamM.y) / dir.y);
+    float hgt = 0.0;
+    for (int i = 0; i < 3; i++) {
+      hgt = texture2D(tDepth, hit.xz / ${(DEPTH.near * 2).toFixed(1)} + 0.5).r;
+      float yy = SEA_Y + max(hgt, 0.0);
+      hit = uCamM + dir * ((yy - uCamM.y) / dir.y);
+    }
+    vec2 q = hit.xz - uFeetW.xz;
+    float nz = fbm2(q * 0.06, 3);
+    vec3 grassC = mix(vec3(0.06, 0.085, 0.03), vec3(0.15, 0.13, 0.06), smoothstep(0.5, 0.75, nz) * 0.6);
+    vec3 sandC = vec3(0.45, 0.39, 0.28);
+    vec3 lit = uSunCol * uSun.y + skyIrr(vec3(0, 1, 0)) * 1.2;
+    vec3 land = mix(sandC, grassC, smoothstep(2.0, 6.0, hgt)) * lit;
+    float F = 0.02 + 0.98 * pow(max(1.0 + dir.y, 1e-6), 5.0);
+    vec3 w = mix(vec3(0.02, 0.1, 0.1), vec3(0.008, 0.045, 0.06), smoothstep(0.0, 8.0, -hgt)) * (uSunCol * uSun.y * 0.6 + skyIrr(vec3(0, 1, 0))) * (1.0 - F) + skyCol(reflect(dir, vec3(0, 1, 0))) * F;
+    float foam = smoothstep(-0.9, -0.1, hgt) * (1.0 - smoothstep(-0.1, 0.2, hgt));
+    w = mix(w, vec3(0.8) * lit * 0.8, foam * 0.6);
+    vec3 ground = mix(w, land, smoothstep(-0.1, 0.15, hgt));
+    col = mix(col, aerial(ground, hit), uBackdrop * smoothstep(0.0, -0.01, dir.y));
   }
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -99,11 +125,13 @@ export class Sky {
   constructor(shared: Shared) {
     this.quad.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
     this.skyMat = new THREE.ShaderMaterial({
-      vertexShader: quadVert, fragmentShader: skyFrag, depthTest: false, depthWrite: false,
-      uniforms: { ...shared, uInvProj: { value: new THREE.Matrix4() }, uCamRot: { value: new THREE.Matrix4() } },
+      // drawn after the opaque scene with a depth test at the far plane, so it only shades
+      // pixels nothing else covers
+      vertexShader: quadVert, fragmentShader: skyFrag, depthTest: true, depthWrite: false,
+      uniforms: { ...shared, uInvProj: { value: new THREE.Matrix4() }, uCamRot: { value: new THREE.Matrix4() }, uBackdrop: { value: 0 }, tDepth: { value: null as THREE.Texture | null }, uFeetW: { value: new THREE.Vector3(FEET_H[0], FEET_H[1], FEET_H[2]) } },
     });
     const sky = new THREE.Mesh(this.quad, this.skyMat);
-    sky.frustumCulled = false; sky.renderOrder = -10;
+    sky.frustumCulled = false; sky.renderOrder = 50;
     this.faderMat = new THREE.ShaderMaterial({
       vertexShader: quadVert, fragmentShader: faderFrag, depthTest: false, depthWrite: false, transparent: true,
       blending: THREE.CustomBlending,
@@ -142,7 +170,10 @@ export class Sky {
     this.group.add(sky, this.wisps, this.fader);
   }
 
-  update(cam: THREE.PerspectiveCamera, zoom: number) {
+  setDepth(t: THREE.Texture) { this.skyMat.uniforms.tDepth.value = t; }
+
+  update(cam: THREE.PerspectiveCamera, zoom: number, backdrop: number) {
+    this.skyMat.uniforms.uBackdrop.value = backdrop;
     this.skyMat.uniforms.uInvProj.value.copy(cam.projectionMatrixInverse);
     this.skyMat.uniforms.uCamRot.value.extractRotation(cam.matrixWorld);
     const op = THREE.MathUtils.smoothstep(zoom, 1.9, 2.5) * (1 - THREE.MathUtils.smoothstep(zoom, 3.05, 3.35));

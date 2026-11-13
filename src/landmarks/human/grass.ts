@@ -79,7 +79,7 @@ void main() {
   LOGZ_FRAG
 }`;
 
-const TIER = { low: { inner: 12000, outer: 6000 }, medium: { inner: 28000, outer: 14000 }, high: { inner: 46000, outer: 26000 } };
+const TIER = { low: { inner: 12000, outer: 6000 }, medium: { inner: 28000, outer: 14000 }, high: { inner: 30000, outer: 14000 } };
 
 export class Grass {
   readonly group = new THREE.Group();

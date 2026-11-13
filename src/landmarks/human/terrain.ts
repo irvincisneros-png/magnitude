@@ -16,7 +16,7 @@ export function heightH(x: number, z: number, s?: Sample): number {
   return rawHeight(x + HX, z + HZ, s).y - GROUND_ABOVE_SEA + FRAME.ground;
 }
 
-const DEPTH = { near: 450, far: 16000, res: 256 };
+export const DEPTH = { near: 450, far: 16000, res: 256 };
 
 const terrainVert = /* glsl */ `
 ${COMMON}
@@ -54,9 +54,9 @@ void main() {
   float sand = (1.0 - W) * smoothstep(95.0, 65.0, e + (nB - 0.5) * 30.0) * smoothstep(11.0, 7.0, hs);
   sand *= 1.0 - rock;
   float forest = smoothstep(0.25, 0.6, esc + (nB - 0.5) * 0.5) * smoothstep(25.0, 70.0, hs);
-  float scrub = smoothstep(0.62, 0.72, fbmAA(q.xz * 0.012 + 3.0, fp * 0.012, 3)) * smoothstep(40.0, 120.0, e) * (1.0 - forest);
+  float scrub = e > 40.0 ? smoothstep(0.62, 0.72, fbmAA(q.xz * 0.012 + 3.0, fp * 0.012, 3)) * smoothstep(40.0, 120.0, e) * (1.0 - forest) : 0.0;
   scrub = max(scrub, (1.0 - W) * smoothstep(80.0, 105.0, e) * smoothstep(150.0, 120.0, e) * 0.85);
-  float urban = smoothstep(500.0, 900.0, e) * (1.0 - smoothstep(0.05, 0.3, esc)) * smoothstep(0.35, 0.5, fbmAA(q.xz * 0.0011, fp * 0.0011, 3));
+  float urban = e > 500.0 ? smoothstep(500.0, 900.0, e) * (1.0 - smoothstep(0.05, 0.3, esc)) * smoothstep(0.35, 0.5, fbmAA(q.xz * 0.0011, fp * 0.0011, 3)) : 0.0;
 
   // --- albedos (linear)
   float g1 = fbmAA(q.xz * 0.9, fp * 0.9, 4);
@@ -71,33 +71,39 @@ void main() {
   // mown / wind-combed sheen moving across the headland
   float gust = fbmAA(q.xz * 0.11 + vec2(uTime * 0.18, uTime * 0.05), fp * 0.11, 2);
   grass *= 0.9 + 0.28 * smoothstep(0.45, 0.75, gust);
-  vec3 rockA = mix(vec3(0.07, 0.062, 0.055), vec3(0.13, 0.11, 0.085), fbmAA(q.xz * 0.6 + q.y * 0.4, fp * 0.6, 4));
+  // scrub and tussock on the steep slope below the crest, with rock outcrops
+  if (slope > 0.3) rock = max(rock, smoothstep(0.3, 0.42, slope) * smoothstep(0.58, 0.7, vnoise3(q * 0.22) * 0.65 + vnoise3(q * 0.7) * 0.35));
+  vec3 rockA = vec3(0.0);
+  if (rock > 0.001) {
+  rockA = mix(vec3(0.07, 0.062, 0.055), vec3(0.13, 0.11, 0.085), fbmAA(q.xz * 0.6 + q.y * 0.4, fp * 0.6, 4));
   float lichen = smoothstep(0.66, 0.8, vnoise3(q * 1.3) * 0.6 + vnoise3(q * 4.1) * 0.4) * smoothstep(2.0, 4.0, hs);
   rockA = mix(rockA, vec3(0.26, 0.15, 0.06), lichen * 0.45);
   rockA = mix(rockA, rockA * 0.55, smoothstep(1.8, 0.6, hs)); // wet, weedy rock near the waterline
   float strata = fbmAA(vec2(q.y * 1.1 + nB * 3.0, dot(q.xz, vec2(0.7, 0.7)) * 0.04), fp * 1.1, 3);
   float joint = smoothstep(0.9, 0.99, abs(sin(dot(q.xz, vec2(0.6, 0.8)) * 0.9 + nB * 9.0 + vnoise(q.xz * 0.3) * 3.0)));
   rockA *= (0.75 + 0.5 * strata) * (1.0 - 0.3 * joint * smoothstep(0.5, 0.8, slope) * (1.0 - smoothstep(0.3, 1.5, fp)));
-  // scrub and tussock on the steep slope below the crest
-  rock = max(rock, smoothstep(0.3, 0.42, slope) * smoothstep(0.58, 0.7, vnoise3(q * 0.22) * 0.65 + vnoise3(q * 0.7) * 0.35));
+  }
   float steepGrass = smoothstep(0.18, 0.4, slope) * (1.0 - rock);
   grass = mix(grass, vec3(0.05, 0.065, 0.025) * (0.7 + 0.6 * g2), steepGrass * 0.7);
   vec3 sandA = mix(vec3(0.42, 0.35, 0.24), vec3(0.5, 0.43, 0.31), g2);
   float wet = smoothstep(1.4, 0.4, hs);
   sandA = mix(sandA, sandA * vec3(0.5, 0.48, 0.45), wet);
-  vec3 forestA = mix(vec3(0.018, 0.032, 0.014), vec3(0.04, 0.055, 0.022), fbmAA(q.xz * 0.02, fp * 0.02, 4));
+  vec3 forestA = forest > 0.001 ? mix(vec3(0.018, 0.032, 0.014), vec3(0.04, 0.055, 0.022), fbmAA(q.xz * 0.02, fp * 0.02, 4)) : vec3(0.0);
   vec3 scrubA = mix(vec3(0.035, 0.05, 0.02), vec3(0.06, 0.07, 0.035), g1);
   // suburbs: roofs, gardens and streets on a rotated grid
+  vec3 town = vec3(0.0);
+  if (urban > 0.001) {
   vec2 sg = mat2(0.94, 0.34, -0.34, 0.94) * q.xz;
   vec2 cell = floor(sg / vec2(22.0, 16.0));
   vec2 fc = fract(sg / vec2(22.0, 16.0));
   float hc = hash12(cell);
   float roof = step(0.25, hc) * step(0.18, fc.x) * step(fc.x, 0.78) * step(0.2, fc.y) * step(fc.y, 0.75);
   vec3 roofA = mix(vec3(0.2, 0.16, 0.14), vec3(0.24, 0.1, 0.06), hash12(cell + 7.0)) * (0.6 + 0.6 * hash12(cell + 3.0));
-  vec3 town = mix(vec3(0.05, 0.065, 0.032), roofA, roof);
+  town = mix(vec3(0.05, 0.065, 0.032), roofA, roof);
   float street = step(fract(sg.x / 154.0), 0.06) + step(fract(sg.y / 112.0), 0.07);
   town = mix(town, vec3(0.09, 0.09, 0.085), clamp(street, 0.0, 1.0));
   town = mix(town, vec3(0.075, 0.08, 0.065) * (0.8 + 0.4 * hash12(floor(q.xz / 60.0))), smoothstep(0.25, 1.1, fp)); // blends to a mottled tone from afar
+  }
 
   vec3 alb = grass;
   alb = mix(alb, scrubA, scrub);
@@ -107,7 +113,7 @@ void main() {
   alb = mix(alb, rockA, rock);
 
   // --- detail normals
-  float hb = (fbmAA(q.xz * 3.0 + q.y * 2.0, fp * 3.0, 4) - 0.5) * 0.25 * rock + (g2 - 0.5) * 0.02 * (1.0 - rock);
+  float hb = (rock > 0.001 ? (fbmAA(q.xz * 3.0 + q.y * 2.0, fp * 3.0, 4) - 0.5) * 0.25 * rock : 0.0) + (g2 - 0.5) * 0.02 * (1.0 - rock);
   n = bumpN(n, p, hb);
   float ndl = dot(n, uSun);
   float sh = figureShadow(p + n * 0.02);
@@ -307,7 +313,8 @@ export class Terrain {
   private oceanMat: THREE.ShaderMaterial;
   private rockMat: THREE.ShaderMaterial;
   private meshes: THREE.Mesh[] = [];
-  private depthN: THREE.DataTexture;
+  /** Ground height above the sea on a 900 m square around the origin (also used by the close-up backdrop). */
+  readonly depthN: THREE.DataTexture;
   private depthF: THREE.DataTexture;
   private rockBase: THREE.BufferGeometry;
 

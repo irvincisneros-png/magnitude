@@ -9,6 +9,7 @@ import type { Quality } from '../../engine/types';
 import { COMMON, type Shared } from './glsl';
 import { SKIN } from './skinGlsl';
 import { PALM } from './figureSdf';
+import { acquireSkinTextures, releaseSkinTextures } from './skinTex';
 
 const ELL = /* glsl */ `
 const vec3 PALM_R = vec3(${PALM.map((v) => v.toFixed(5)).join(', ')});
@@ -57,11 +58,7 @@ void main() {
   vec3 v = normalize(uCamM - p);
   float fp = max(length(dFdx(p)), length(dFdy(p)));
   SkinS s = skin(ph.xz, fp);
-  float e = max(fp * 0.6, 0.15e-6);
-  SkinS sx = skin(ph.xz + vec2(e, 0.0), fp);
-  SkinS sz = skin(ph.xz + vec2(0.0, e), fp);
-  vec3 n0 = palmN(ph);
-  vec3 n = uFigRot * normalize(n0 - vec3(sx.h - s.h, 0.0, sz.h - s.h) / e);
+  vec3 n = uFigRot * normalize(palmN(ph) - vec3(s.g.x, 0.0, s.g.y));
   vec3 col;
   if (gl_FrontFacing) {
     vec3 alb = skinAlbedo(ph.xz, s, fp);
@@ -135,7 +132,7 @@ void main() {
   float s2 = pow(sqrt(max(1.0 - th2 * th2, 1e-12)), 18.0);
   col += uSunCol * (s1 * 0.22 * (0.85 + 0.3 * cut) + s2 * vec3(0.45, 0.25, 0.12) * 0.25);
   // sunlight through the shaft when backlit: the classic golden rim on hairs
-  col += uSunCol * vec3(0.8, 0.45, 0.2) * pow(max(dot(v, -L), 1e-6), 3.0) * 0.35;
+  col += uSunCol * vec3(0.8, 0.45, 0.2) * pow(max(dot(v, -L), 1e-6), 4.0) * 0.14;
   col = aerial(col, vP);
   float edge = 1.0 - smoothstep(0.75, 1.0, abs(sd));
   float a = vA * mix(1.0, edge, vA) * uFade;
@@ -145,8 +142,8 @@ void main() {
 }`;
 
 const TIER = {
-  low: { rings: 90, segs: 90, hairStep: 2 },
-  medium: { rings: 130, segs: 128, hairStep: 1 },
+  low: { rings: 80, segs: 80, hairStep: 3 },
+  medium: { rings: 120, segs: 120, hairStep: 2 },
   high: { rings: 170, segs: 168, hairStep: 1 },
 };
 
@@ -159,10 +156,12 @@ export class Skin {
   private hairData: Float32Array | null = null;
   private tier: Quality = 'high';
 
+  private tex = acquireSkinTextures();
+
   constructor(shared: Shared) {
     this.patchMat = new THREE.ShaderMaterial({
       vertexShader: patchVert, fragmentShader: patchFrag, side: THREE.DoubleSide,
-      uniforms: { ...shared, uRmin: { value: 1e-6 }, uRmax: { value: 0.01 }, uRings: { value: 100 } },
+      uniforms: { ...shared, uRmin: { value: 1e-6 }, uRmax: { value: 0.01 }, uRings: { value: 100 }, tCells: { value: this.tex.cells }, tPlat: { value: this.tex.plat } },
     });
     this.hairMat = new THREE.ShaderMaterial({
       vertexShader: hairVert, fragmentShader: hairFrag, side: THREE.DoubleSide,
@@ -193,7 +192,7 @@ export class Skin {
     g.setIndex(idx);
     this.patch = new THREE.Mesh(g, this.patchMat);
     this.patch.frustumCulled = false;
-    this.patch.renderOrder = 4;
+    this.patch.renderOrder = 2; // nearest: drawn first so the hand behind it is depth-rejected
     this.patchMat.uniforms.uRings.value = cfg.rings;
     this.group.add(this.patch);
 
@@ -228,6 +227,14 @@ export class Skin {
     this.group.add(this.hairs);
   }
 
+  setLogDepth(on: boolean) {
+    for (const m of [this.patchMat, this.hairMat]) {
+      if (on === !('NO_LOGZ' in m.defines)) continue;
+      if (on) delete m.defines.NO_LOGZ; else m.defines.NO_LOGZ = '';
+      m.needsUpdate = true;
+    }
+  }
+
   /** viewM: view height in metres. Returns the patch radius (0 when hidden) for the hand mesh. */
   update(zoom: number, viewM: number): number {
     const on = zoom < -1.8;
@@ -253,5 +260,6 @@ export class Skin {
     this.hairs?.geometry.dispose();
     this.patchMat.dispose();
     this.hairMat.dispose();
+    releaseSkinTextures();
   }
 }

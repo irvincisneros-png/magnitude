@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { BUMP, COMMON, type Shared } from './glsl';
 import { SKIN } from './skinGlsl';
+import { acquireSkinTextures, releaseSkinTextures } from './skinTex';
 import { buildFigure, HAND_H, type FigureOut, type MeshOut } from './figureSdf';
 
 const vert = /* glsl */ `
@@ -170,12 +171,8 @@ void main() {
     #ifdef HAND_R
     vec3 hp = uFigInv * p; // hand frame (x along the fingers)
     SkinS s = skin(hp.xz, fp);
-    float e = max(fp * 0.6, 0.25e-6);
-    SkinS sx = skin(hp.xz + vec2(e, 0.0), fp);
-    SkinS sz = skin(hp.xz + vec2(0.0, e), fp);
-    vec2 g = vec2(sx.h - s.h, sz.h - s.h) / e;
     float top = smoothstep(0.15, 0.6, n.y);
-    n = normalize(n - uFigRot * vec3(g.x, 0.0, g.y) * top);
+    n = normalize(n - uFigRot * vec3(s.g.x, 0.0, s.g.y) * top);
     vec3 alb = skinAlbedo(hp.xz, s, fp * (2.0 - top));
     // knuckle and joint creases
     float crease = 0.0;
@@ -238,6 +235,7 @@ export class Figure {
   private geos: THREE.BufferGeometry[] = [];
   readonly handMat: THREE.ShaderMaterial;
   private uBreath = { value: 0 };
+  private tex = acquireSkinTextures();
 
   constructor(private shared: Shared) {
     const headInv = new THREE.Matrix3();
@@ -252,6 +250,7 @@ export class Figure {
           ...shared, uBreath: this.uBreath, uPatchR: { value: 0 },
           uHeadInv: { value: headInv }, uPivot: { value: new THREE.Vector3(-0.012, 1.47, 0) },
           uH: { value: new THREE.Vector3(...HAND_H) },
+          tCells: { value: this.tex.cells }, tPlat: { value: this.tex.plat },
         },
       });
       this.mats.push(m);
@@ -295,6 +294,16 @@ export class Figure {
     return d;
   }
 
+  setTier(_q: string) { /* skin relief is texture-based on every tier */ }
+
+  setLogDepth(on: boolean) {
+    for (const m of this.mats) {
+      if (on === !('NO_LOGZ' in m.defines)) continue;
+      if (on) delete m.defines.NO_LOGZ; else m.defines.NO_LOGZ = '';
+      m.needsUpdate = true;
+    }
+  }
+
   update(time: number, patchR: number) {
     this.uBreath.value = Math.sin((time * 2 * Math.PI) / 4.4) * 0.5 + 0.5;
     this.handMat.uniforms.uPatchR.value = patchR;
@@ -303,5 +312,6 @@ export class Figure {
   dispose() {
     for (const g of this.geos) g.dispose();
     for (const m of this.mats) m.dispose();
+    releaseSkinTextures();
   }
 }

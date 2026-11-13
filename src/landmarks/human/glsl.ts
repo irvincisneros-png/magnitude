@@ -114,8 +114,15 @@ float fbmAA(vec2 p, float fp, int oct) {
 
 // ---------------------------------------------------------------- depth
 #define LOGZ_VARY varying float vLogZ;
+#ifdef NO_LOGZ
+// close-up (skin) regime: everything drawn is within metres, so ordinary depth is precise enough
+// and early depth rejection keeps hidden layers from being shaded
+#define LOGZ_VERT(mv) vLogZ = -(mv).z;
+#define LOGZ_FRAG if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+#else
 #define LOGZ_VERT(mv) vLogZ = -(mv).z; gl_Position.z = 0.0;
 #define LOGZ_FRAG if (any(isnan(gl_FragColor)) || any(isinf(gl_FragColor))) gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); gl_FragDepth = log2(max(vLogZ, 1e-12) * uLogD.x + 1.0) * uLogD.y;
+#endif
 
 // ---------------------------------------------------------------- sky and air
 vec3 skyCol(vec3 d) {

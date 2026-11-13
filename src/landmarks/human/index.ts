@@ -59,6 +59,7 @@ function createHuman(): Landmark {
   const grass = new Grass(shared);
   const figure = new Figure(shared);
   const skin = new Skin(shared);
+  sky.setDepth(terrain.depthN);
   root.add(sky.group, terrain.group, grass.group, figure.group, skin.group);
   let renderer: THREE.WebGLRenderer | null = null;
   let tier: Quality = 'high';
@@ -70,6 +71,7 @@ function createHuman(): Landmark {
     terrain.build(q);
     grass.build(q);
     skin.build(q);
+    figure.setTier(q);
   };
 
   return {
@@ -115,7 +117,14 @@ function createHuman(): Landmark {
       const patchR = skin.update(z, viewM);
       figure.update(frame.time, patchR);
       grass.update(z);
-      sky.update(cam, z);
+      // skin regime: the place is far out of focus, so a cheap painted backdrop stands in for the
+      // terrain, sea and grass (they cost most of the frame and would be sub-pixel blur anyway)
+      const backdrop = z < -1.3 ? 1 : 0;
+      terrain.group.visible = backdrop === 0;
+      if (backdrop) grass.group.visible = false;
+      sky.update(cam, z, backdrop);
+      figure.setLogDepth(!backdrop);
+      skin.setLogDepth(!backdrop);
     },
     setQuality(q: Quality) { if (q !== tier) build(q); },
     dispose() {
