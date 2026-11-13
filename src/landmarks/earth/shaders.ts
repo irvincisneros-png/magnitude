@@ -48,6 +48,7 @@ export const planetFrag = /* glsl */ `
   precision highp int;
   ${common}
   uniform vec3 uCamPos;
+  uniform vec3 uOffset;       // scene content shift (globe glides to centre as you zoom out)
   uniform vec3 uSun;          // unit vector towards the Sun (local frame)
   uniform float uSunE;        // solar irradiance scale
   uniform vec3 uEast, uUp, uNorth; // anchor basis in geo coordinates
@@ -206,7 +207,7 @@ export const planetFrag = /* glsl */ `
 
   void main() {
     vec3 rd = normalize(vDir);
-    vec3 ro = uCamPos;
+    vec3 ro = uCamPos - uOffset; // camera in the content frame (Wollongong at the origin)
     float hc0 = heightOf(ro);
     if (hc0 < 0.0) ro += normalize(ro + vec3(0.0, R_E, 0.0)) * (-hc0 + 2.0 / UNIT_M); // under the ground: lift to the surface
 

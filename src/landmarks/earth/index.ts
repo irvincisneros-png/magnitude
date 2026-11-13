@@ -62,6 +62,8 @@ const factory: LandmarkFactory = () => {
   let disposed = false;
   let cloudRot = 0.35;
   const bufSize = new THREE.Vector2();
+  const camC = new THREE.Vector3();
+  const baseLabels = (meta.labels ?? []).map((l) => [...l.position] as [number, number, number]);
 
   const { east, up, north } = anchorBasis();
   const pole = polarAxisLocal();
@@ -73,6 +75,7 @@ const factory: LandmarkFactory = () => {
     uInvProj: { value: new THREE.Matrix4() },
     uCamWorld: { value: new THREE.Matrix4() },
     uCamPos: { value: new THREE.Vector3() },
+    uOffset: { value: new THREE.Vector3() },
     uSun: { value: sun },
     uSunE: { value: 5.5 },
     uEast: { value: east }, uUp: { value: up }, uNorth: { value: north },
@@ -239,7 +242,16 @@ const factory: LandmarkFactory = () => {
       sun.copy(sunBase).applyQuaternion(q);
 
       // Camera altitude (precise near the origin): fade the cloud layer while passing through it.
-      const p = cam.position;
+      // Zoomed in, Wollongong sits at the origin; zoomed out, the globe glides up so its centre is.
+      // The camera orbits the origin at distance d, so the shift is capped to keep a level (pitch ≥ 0)
+      // camera above the globe by at least 12% of d — otherwise mid-glide views would sit inside Earth.
+      const d = cam.position.length();
+      const target = 0.5 * THREE.MathUtils.smoothstep(frame.zoom, -1.6, -0.3);
+      const bound = 0.5 - Math.sqrt(Math.max(0, (0.5 + 0.12 * d) ** 2 - d * d));
+      const shift = Math.max(0, Math.min(target, bound));
+      uniforms.uOffset.value.set(0, shift, 0);
+      meta.labels?.forEach((l, i) => { l.position[1] = baseLabels[i][1] + shift; });
+      const p = camC.copy(cam.position).sub(uniforms.uOffset.value);
       const alt = (p.dot(p) + p.y) / (Math.hypot(p.x, p.y + 0.5, p.z) + 0.5);
       const gap = Math.abs(alt - CLOUD_H) / CLOUD_H;
       uniforms.uCloudFade.value = 0.15 + 0.85 * THREE.MathUtils.smoothstep(gap, 0.0, 0.6);
