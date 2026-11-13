@@ -8,7 +8,7 @@ import type { Quality } from '../../engine/types';
 import { COMMON, type Shared } from './glsl';
 import { FEET_H } from './pose';
 import { MAP_O } from './glsl';
-import { sampleCover, type SiteData } from './siteData';
+import { sampleCover, siteHeight, type SiteData } from './siteData';
 import { heightH } from './terrain';
 import { fbm2, smoothstep } from './terrainHeight';
 
@@ -124,6 +124,7 @@ export class Grass {
       const mx = x - MAP_O[0], mz = z - MAP_O[1];
       const sand = sampleCover(D.cover, D.G.cover, 0, mx, mz) + 0.6 * sampleCover(D.cover2, D.G.cover, 1, mx, mz);
       if (sand > 0.35 + 0.25 * rnd()) continue;
+      if (siteHeight(D, mx, mz) < 1.9 + 0.3 * rnd()) continue; // not on the beach berm or the wet sand
       if (this.feet && this.onShoe(x, z)) continue;
       const y = heightH(D, x, z);
       // patchy: taller tussocks towards the sand's edge and the scrub, shorter where it is trampled

@@ -42,7 +42,7 @@ const meta: LandmarkMeta = {
   evidence: 'measured',
   nesting: 'true',
   blurb:
-    'You are about 1.7 metres tall, standing on the dunes at Woonona Beach, NSW, north of Wollongong. This is the scale we live at: every other size in Magnitude is compared with you, from the skin cells on the back of your hand to the coast around you.',
+    'You are about 1.7 metres tall, standing on the sand at the foot of the dunes at Woonona Beach, NSW, north of Wollongong. This is the scale we live at: every other size in Magnitude is compared with you, from the skin cells on the back of your hand to the coast around you.',
   howWeKnow: {
     instrument: 'Tape measures, microscopes, maps and elevation surveys',
     text:
@@ -139,7 +139,7 @@ function createHuman(): Landmark {
       terrain = new Terrain(shared, D, tex);
       grass = new Grass(shared, D);
       built = new Built(shared, D);
-      trees = new Trees(shared, D);
+      trees = new Trees(shared, D, tex);
       root.add(terrain.group, built.group, trees.group, grass.group);
       build(tier);
       if (Math.abs(siteHeight(D, 0, 0) + FRAME.sea - FRAME.ground) > 0.01) console.warn('[human] ground under the feet does not match GROUND_ELEV_M');

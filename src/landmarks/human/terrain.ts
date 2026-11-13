@@ -61,7 +61,9 @@ void main() {
                     smoothstep(0.16, 0.3, slope + (nC - 0.5) * 0.12) * smoothstep(230.0, 290.0, hs) * smoothstep(420.0, 380.0, hs));
   float sand = max(smoothstep(0.3, 0.6, cA.r + (nC - 0.5) * 0.25), smoothstep(1.7, 0.9, hs + (nB - 0.5) * 0.6));
   sand *= 1.0 - rockP;
-  float scrub = smoothstep(0.3, 0.6, cA.g + (nC - 0.5) * 0.3) * (1.0 - sand);
+  // a ragged edge where the scrub meets the sand: runners and tussocks, not a soft gradient
+  float rag = cA.g > 0.02 && cA.g < 0.98 ? (vnoiseT(q * 1.4 + 3.0) - 0.5) * 0.45 + (vnoiseT(q * 4.3) - 0.5) * 0.25 : 0.0;
+  float scrub = smoothstep(0.42, 0.5, cA.g + (nC - 0.5) * 0.3 + rag) * (1.0 - sand);
   float forest = max(smoothstep(0.35, 0.6, cA.b), smoothstep(45.0, 120.0, hs + (nB - 0.5) * 50.0) * (1.0 - 0.7 * urbanW)) * (1.0 - sand);
   float town = e > 2900.0 ? urbanW * smoothstep(2900.0, 3200.0, e) * (1.0 - forest) : 0.0;
   float road = smoothstep(0.3, 0.6, cB.r), path = smoothstep(0.35, 0.65, cB.g) * (1.0 - road), rail = smoothstep(0.3, 0.6, cB.b);
@@ -96,6 +98,12 @@ void main() {
     scrubA = mix(scrubA, vec3(0.1, 0.095, 0.06), smoothstep(0.7, 0.85, vnoiseT(q * 0.35 + 5.0)) * 0.5); // grey-leaved banksia
     alb = mix(alb, scrubA, scrub);
   }
+  // pigface (Carpobrotus) mats and spinifex runners on the sand at the dune's foot
+  float foot = cA.r > 0.15 && hs > 1.5 && hs < 4.0 ? smoothstep(0.02, 0.2, cA.g) * (1.0 - smoothstep(0.55, 0.9, cA.g)) : 0.0;
+  float mats = 0.0;
+  if (foot > 0.001) {
+    mats = smoothstep(0.55, 0.68, vnoiseT(q * 0.45 + 11.0) + (vnoiseT(q * 2.6) - 0.5) * 0.3) * foot;
+  }
   if (forest > 0.001) {
     vec3 forestA = mix(vec3(0.016, 0.03, 0.013), vec3(0.042, 0.055, 0.024), fbmT(q * 0.02, 2)) * (0.7 + 0.6 * fbmT(q * 0.13, 2));
     alb = mix(alb, forestA, forest);
@@ -118,13 +126,18 @@ void main() {
     vec3 sandA = mix(vec3(0.43, 0.35, 0.22), vec3(0.52, 0.43, 0.29), g2);
     sandA *= 0.88 + 0.24 * fbmT(q * 0.6 + 1.0, 2);
     // footprints and wind ripples on the dry sand
-    sandA *= 0.94 + 0.12 * fbmT(vec2(q.x * 3.1 + q.y * 1.2, q.y * 0.6), 2);
     wet = smoothstep(0.85, 0.25, hs + (nC - 0.5) * 0.2);
+    sandA *= 1.0 + (1.0 - wet) * 0.12 * (fbmT(vec2(q.x * 3.1 + q.y * 1.2, q.y * 0.6), 2) - 0.5);
     // the line of dried weed and shell left by the last high tide
     sandA *= 1.0 - 0.35 * smoothstep(0.12, 0.0, abs(hs - 1.05 - (nC - 0.5) * 0.2)) * smoothstep(0.3, 0.7, vnoiseT(q * 1.7));
     sandA = mix(sandA, sandA * vec3(0.5, 0.48, 0.45), wet);
     sandA = mix(sandA, sandA * vec3(0.55, 0.62, 0.6), smoothstep(0.0, -1.0, hs)); // seabed under the water
     alb = mix(alb, sandA, sand);
+  }
+  if (mats > 0.001) {
+    vec3 pig = mix(vec3(0.045, 0.075, 0.025), vec3(0.09, 0.1, 0.04), vnoiseT(q * 3.0));
+    pig = mix(pig, vec3(0.32, 0.05, 0.2), smoothstep(0.82, 0.9, vnoiseT(q * 7.0 + 5.0)) * 0.8); // magenta flowers
+    alb = mix(alb, pig, mats);
   }
   if (rock > 0.001) {
     // dark latite on the platform; pale Hawkesbury sandstone in the escarpment cliffs
@@ -214,7 +227,9 @@ void main() {
   vec2 g = wS > 0.0 ? vec2(siteHD(q + vec2(5.0, 0.0)).y - sd, siteHD(q + vec2(0.0, 5.0)).y - sd) : -uSwell;
   vec2 sdir = -g / max(length(g), 1e-4);
   float groupA = 0.3 + 1.2 * vnoise(q / 210.0 + vec2(uTime * 0.012, 0.0)) * vnoise(q / 90.0 + 3.0);
-  gerst(q, uSwell, 85.0, 0.33 * shoal * fade * groupA * (1.0 - 0.8 * wS), 0.45, 0.0, disp, dx, dz, ph0);
+  // crests bent and broken by slowly varying phase (a real swell is never a ruled grid)
+  float warp = vnoise(q / 380.0 + 7.0) * 5.0 + vnoise(q / 140.0) * 1.6;
+  gerst(q, uSwell, 85.0, 0.33 * shoal * fade * groupA * (1.0 - 0.8 * wS), 0.45, warp, disp, dx, dz, ph0);
   {
     float k = 6.2832 / 60.0, w = sqrt(9.81 * k);
     float phs = -k * sd - w * uTime + vnoise(q / 180.0) * 2.0;
@@ -259,7 +274,7 @@ vec2 ripple(vec2 xz, float fp) {
 }
 void main() {
   // under the land: the terrain hides it, so skip the shading (log depth defeats early-z)
-  if (vDepth < -0.6 && vInland < 0.5) discard;
+  if (vDepth < -0.25 && vInland < 0.5) discard;
   vec3 p = vP;
   vec2 q = p.xz - MAP_O;
   vec3 v = normalize(uCamM - p);
@@ -409,7 +424,8 @@ export class Terrain {
             const open = 1 - Math.min(1, coverAt(D, 0, mx, mz) * 1.6);
             const hum = 0.55 + 0.45 * fbm2(mx / 2.8 + 3.1, mz / 2.8, 3) + 0.25 * vnoise2(mx / 0.9, mz / 0.9);
             const lee = 0.6 + 0.4 * Math.min(1, Math.max(0, (-mx - 8) / 60));
-            can = (THREE.MathUtils.smoothstep(sc, 0.25, 0.75) * 1.7 * lee * hum + THREE.MathUtils.smoothstep(wd, 0.25, 0.75) * (7 + 5 * fbm2(mx / 9, mz / 9, 3))) * open;
+            const scR = sc + (vnoise2(mx / 1.6 + 7.0, mz / 1.6) - 0.5) * 0.45; // ragged outline
+            can = (THREE.MathUtils.smoothstep(scR, 0.38, 0.62) * 1.7 * lee * hum + THREE.MathUtils.smoothstep(wd, 0.25, 0.75) * (7 + 5 * fbm2(mx / 9, mz / 9, 3))) * open;
             if (r < 6) can *= THREE.MathUtils.smoothstep(r, 3, 6);
           }
         }
