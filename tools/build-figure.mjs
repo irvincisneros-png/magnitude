@@ -11,8 +11,9 @@
  * Pipeline: parse → macro targets (an ordinary young adult) → skeleton from joint vertex groups →
  * pose (FK + IK, dual-quaternion skinning) → clothing built from the posed body surface (drape
  * relaxation, hem flare, folds, opening thickness) + authored straw hat, sunglasses, short hair
- * shell → hidden-surface removal under clothes → Catmull–Clark (high tier) → ray-traced per-vertex
- * AO + thickness → frame: anchor on the back of the right hand at the origin, +Y up, 1 unit = 1.7 m
+ * shell (+ three fur layers on the high tier, and a per-vertex hairline distance so the shaders paint
+ * a soft hairline onto the skin) → hidden-surface removal under clothes → Catmull–Clark (high tier) →
+ * ray-traced per-vertex AO + thickness (relaxed over the mesh) → frame: anchor on the back of the right hand at the origin, +Y up, 1 unit = 1.7 m
  * → quantised binary + JSON manifest in public/assets/human/figure/.
  *
  * Pose: relaxed, weight on the left leg, left arm hanging, right hand resting flat on top of the
@@ -840,14 +841,14 @@ function glassesMesh(nOut, nRad) {
     if (fz < 0) for (const f of faces) f.reverse();
     parts.push({ P, faces, mat: 10 });
     // frame rim
-    const path = []; for (let k = 0; k < nOut; k++) path.push(add(outline(s, sg, k, nOut, 1.04), [0, 0, 0.0005]));
-    parts.push({ ...sweep(path, () => [0, 0, 1], 0.004, 0.0038, true), mat: 9 });
+    const path = []; for (let k = 0; k < nOut; k++) path.push(add(outline(s, sg, k, nOut, 1.03), [0, 0, 0.0005]));
+    parts.push({ ...sweep(path, () => [0, 0, 1], 0.0022, 0.0034, true), mat: 9 });
     hinge[s] = add(outline(s, sg, sg > 0 ? Math.round(nOut * 0.06) : Math.round(nOut * 0.44), nOut, 1.08), [0, 0, -0.002]);
   }
   // bridge
-  const bA = outline('R', -1, Math.round(nOut * 0.12), nOut, 1.04), bB = outline('L', 1, Math.round(nOut * 0.38), nOut, 1.04);
+  const bA = outline('R', -1, Math.round(nOut * 0.12), nOut, 1.03), bB = outline('L', 1, Math.round(nOut * 0.38), nOut, 1.03);
   const bridge = []; for (let k = 0; k <= 8; k++) { const t = k / 8; const p = lerp3(bA, bB, t); p[1] += 0.003 * Math.sin(Math.PI * t); p[2] += 0.002 * Math.sin(Math.PI * t); bridge.push(p); }
-  parts.push({ ...sweep(bridge, () => [0, 0, 1], 0.0035, 0.004, false), mat: 9 });
+  parts.push({ ...sweep(bridge, () => [0, 0, 1], 0.0022, 0.0028, false), mat: 9 });
   // temples back to the ears, just clear of the head, then down behind the ear
   for (const [s, sg] of [['R', -1], ['L', 1]]) {
     const e = earC[s];
@@ -867,7 +868,7 @@ function glassesMesh(nOut, nRad) {
     // hook down behind the ear
     const last = path[path.length - 1];
     for (let k = 1; k <= 5; k++) { const a = (k / 5) * Math.PI * 0.45; path.push([last[0] - 0.003 * sg * k / 5, last[1] - Math.sin(a) * 0.022, last[2] - (1 - Math.cos(a)) * 0.012 - k * 0.002]); }
-    parts.push({ ...sweep(path, () => [0, 1, 0], 0.0026, 0.0042, false), mat: 9 });
+    parts.push({ ...sweep(path, () => [0, 1, 0], 0.0019, 0.0036, false), mat: 9 });
   }
   return parts;
 }
@@ -1038,8 +1039,34 @@ posedCache = Pp;
 const anchor0 = anchorOf(Pp, bodyFaces);
 log('anchor (posed, m)', anchor0.p.map((v) => v.toFixed(4)), 'normal', anchor0.n.map((v) => v.toFixed(4)));
 
+// ============================================================== hairline signed distance (rest frame)
+/**
+ * Smooth signed distance (metres, + inside the hair) to the hairline: the same analytic line, ear
+ * clearances and sideburn cut that pick the hair-shell faces, but evaluated per vertex so the shaders
+ * can draw a soft, irregular hairline across the skin instead of the shell's stair-stepped polygon edge.
+ * Does not change any geometry (the hat and the hand pose depend on the shell built above).
+ */
+const hairSD = new Float64Array(NV).fill(-0.02);
+for (let i = 0; i < 13380; i++) {
+  const p = get3(V0, i);
+  const headish = isHeadV[i] || (wOf(i, NECK) > 0.2 && p[2] < headC[2] + 0.04);
+  if (!headish) continue;
+  const back = smooth(eyeR[2] - 0.055, eyeR[2] - 0.165, p[2]);
+  const side = smooth(0.035, 0.065, Math.abs(p[0]));
+  const yLine = eyeR[1] + 0.062 - back * 0.185 - side * (1 - back) * 0.05 + 0.008 * Math.cos(p[0] * 40);
+  let sd = p[1] - yLine;
+  sd = Math.min(sd, len(sub(p, earC.R)) - 0.021, len(sub(p, earC.L)) - 0.021);
+  sd = Math.min(sd, Math.max(0.055 - Math.abs(p[0]), earC.R[2] + 0.018 - p[2], p[1] - (earC.R[1] + 0.012)));
+  // the nape: square the shell's V off a little (the painted hairline reaches lower either side)
+  sd += 0.012 * back * smooth(0.012, 0.04, Math.abs(p[0])) * (1 - smooth(0.055, 0.07, Math.abs(p[0])));
+  hairSD[i] = clamp(sd, -0.02, 0.02);
+}
+/** 8-bit friendly encoding of the hairline distance: ±2 cm → 0..1. */
+const encSD = (sd) => clamp(0.5 + sd / 0.04, 0, 1);
+
 // ============================================================== body masks (per base vertex)
-const bodyAux = new Float64Array(NV * 4); // brow, redness, nail, lips
+// brow and lips never meet, so they share one channel (0.5 + brow/2 − lips/2); the 4th is skin oiliness
+const bodyAux = new Float64Array(NV * 4); // brow|lips, redness, nail, oil (T-zone)
 {
   const ORIS = new Set(order.filter((n) => /^oris/.test(n)));
   const jointsRed = [];
@@ -1084,7 +1111,18 @@ const bodyAux = new Float64Array(NV * 4); // brow, redness, nail, lips
       if (rr < 0.012 && up > 0.35) nail = Math.max(nail, smooth(0.35, 0.6, up) * smooth(0.25, 0.5, u) * (1 - smooth(1.05, 1.22, u)));
     }
     const lips = wOf(i, ORIS) > 0.45 ? smooth(0.45, 0.75, wOf(i, ORIS)) : 0;
-    bodyAux.set([brow, red, nail, lips], i * 4);
+    // T-zone: forehead centre, the line of the nose, the chin point (a little oilier, glossier)
+    let oil = 0;
+    if (isHeadV[i] && p[2] > eyeR[2] - 0.02) {
+      const ec = lerp3(eyeR, eyeL, 0.5);
+      const fore = (1 - smooth(0.02, 0.045, Math.abs(p[0]))) * smooth(ec[1] + 0.02, ec[1] + 0.035, p[1]) * (1 - smooth(ec[1] + 0.06, ec[1] + 0.08, p[1]));
+      const br = add(ec, [0, 0.004, 0.012]);
+      const ax = sub(nose, br), L = len(ax), t = clamp(dot(sub(p, br), ax) / (L * L), 0, 1.15);
+      const noseL = 1 - smooth(0.006, 0.016, len(sub(p, add(br, mul(ax, t)))));
+      const chin = (1 - smooth(0.008, 0.02, Math.abs(p[0]))) * (1 - smooth(0.01, 0.025, Math.abs(p[1] - (ec[1] - 0.105))));
+      oil = Math.max(fore * 0.75, noseL, chin * 0.45);
+    }
+    bodyAux.set([0.5 + 0.5 * brow - 0.5 * lips, red, nail, oil], i * 4);
   }
 }
 
@@ -1206,7 +1244,11 @@ function curtainFn(P, src) {
       const d = [p[0] - c[0], 0, p[2] - c[2]], r = len(d);
       if (best > 0) best -= K * (py - p[1]);
       py = p[1];
-      if (r < best) { const nd = mul(d, best / r); set3(P, a, [c[0] + nd[0], p[1], c[2] + nd[2]]); }
+      // under the raised right arm the armpit sits high and wide: hanging the cloth straight down from
+      // there made a sack-like bulge over the ribs, so on that side the drop may only stand a little off the body
+      let want = best;
+      if (p[0] < c[0] - 0.02) { const bi = bodySD(p).i; if (bi !== undefined) { const q = get3(bodyPts, bi); want = Math.min(want, Math.hypot(q[0] - c[0], q[2] - c[2]) + 0.016); } }
+      if (r < want) { const nd = mul(d, want / r); set3(P, a, [c[0] + nd[0], p[1], c[2] + nd[2]]); }
       best = Math.max(best, Math.max(r, best));
     }
   }
@@ -1217,11 +1259,50 @@ const shirt = drape(shirtFaceIdx, {
   curtain: curtainFn,
   stiff: shirtStiff, hang: (i) => smooth(0.38, 0.12, V0[i * 3 + 1] - hipY),
 });
+const ARMPIT_R = add(head('upperarm01.R'), [0.01, -0.035, 0]);
+/** Weight of the raised-arm armpit smoothing region (0 near the cloth openings). */
+const armpitW = (p, dOpen) => (1 - smooth(0.07, 0.15, len(sub(p, ARMPIT_R)))) * smooth(0.006, 0.03, dOpen);
+{
+  // Raised right arm: the skinned body bunches into lumps round the armpit and the cloth followed them
+  // (a knot at the front fold, a bulge over the lat). Real jersey bridges that: Taubin-smooth the shirt
+  // there (no shrinkage) and let it sink a few mm into the body where the body is hidden under it, away
+  // from the openings. The hand, hat and everything the anchor depends on are untouched.
+  const A = ARMPIT_R;
+  const n = shirt.P.length / 3, P = shirt.P;
+  const adj = adjacency(shirt.faces, n);
+  const dOpen = seededDist(P, shirt.faces, [...new Set(shirt.be.flat())]);
+  const Wt = new Float64Array(n);
+  for (let j = 0; j < n; j++) Wt[j] = armpitW(get3(P, j), dOpen[j]);
+  for (let it = 0; it < 40; it++) for (const lam of [0.55, -0.58]) {
+    const t = P.slice();
+    for (let j = 0; j < n; j++) {
+      if (Wt[j] <= 0) continue;
+      const m = [0, 0, 0]; for (const k of adj[j]) { m[0] += t[k * 3]; m[1] += t[k * 3 + 1]; m[2] += t[k * 3 + 2]; }
+      const w = lam * Wt[j] / adj[j].length;
+      for (let c = 0; c < 3; c++) P[j * 3 + c] += w * (m[c] - adj[j].length * t[j * 3 + c]);
+    }
+  }
+  for (let j = 0; j < n; j++) {
+    if (Wt[j] <= 0) continue;
+    const p = get3(P, j); const { d, n: nn } = bodySD(p);
+    const g = mix1(0.0035, -0.006, smooth(0.035, 0.07, dOpen[j]));
+    if (d < g) set3(P, j, add(p, mul(nn, g - d)));
+  }
+}
+function mix1(a, b, t) { return a + (b - a) * t; }
 const shorts = drape(shortsFaceIdx, {
   gap0: (i) => 0.007, gapMin: (i) => 0.0035 + 0.003 * smooth(0.3, 0.8, tLegOf[i]), iters: 70, lam: 0.34, lamB: 0.25, grav: 0.0003, stretch: 1.07,
   stiff: () => 1, hang: (i) => smooth(0.15, 0.6, tLegOf[i]),
 });
 log('draped');
+if (DBG) {
+  const sh = head('upperarm01.R'), hist = {};
+  for (let j = 0; j < shirt.P.length / 3; j++) {
+    const p = get3(shirt.P, j); const dd = len(sub(p, sh)); if (dd > 0.16) continue;
+    const g = bodySD(p).d; const k = (Math.round(g * 200) / 200).toFixed(3); hist[k] = (hist[k] || 0) + 1;
+  }
+  log('shirt gap near R shoulder (m → count)', JSON.stringify(hist));
+}
 
 // body faces hidden under the clothes (keep a few rings inside each opening, and the hair shell replaces the scalp)
 const covered = new Uint8Array(NV);
@@ -1276,6 +1357,7 @@ function finishCloth(P, faces, kind) {
   const Ls = loops(faces).map((L) => loopInfo(P, L)).sort((a, b) => b.per - a.per);
   const aux = new Float64Array(n * 4), flut = new Float64Array(n);
   const disp = new Float64Array(n * 3);
+  const openD = seededDist(P, faces, [...new Set(boundaryEdges(faces).flat())]);
   if (kind === 'shirt') {
     const hem = Ls[0];
     const rest = Ls.slice(1).sort((a, b) => Math.abs(b.c[0]) - Math.abs(a.c[0]));
@@ -1345,7 +1427,12 @@ function finishCloth(P, faces, kind) {
   }
   for (let i = 0; i < n * 3; i++) P[i] += disp[i];
   // make sure the folds did not push cloth into the body
-  for (let i = 0; i < n; i++) { const p = get3(P, i); const { d, n: nn } = bodySD(p); if (d < 0.0025) set3(P, i, add(p, mul(nn, 0.0025 - d))); }
+  for (let i = 0; i < n; i++) {
+    const p = get3(P, i); const { d, n: nn } = bodySD(p);
+    // (the smoothed raised-arm armpit may sit a little inside the hidden body: keep it there)
+    const g = kind === 'shirt' ? mix1(0.0025, -0.006, armpitW(p, openD[i]) * smooth(0.035, 0.07, openD[i])) : 0.0025;
+    if (d < g) set3(P, i, add(p, mul(nn, g - d)));
+  }
   return { aux, flut };
 }
 
@@ -1380,6 +1467,7 @@ function addLips(part, th) {
 
 function buildTier(hi) {
   const parts = [];
+  let fur = null; // appended last so the other parts keep the same index in both tiers
   // --- body + eyes
   {
     const faces = [...visBodyFaces, ...eyeFaces];
@@ -1388,9 +1476,12 @@ function buildTier(hi) {
     const n = c.P.length / 3;
     const aux = new Float64Array(n * 4);
     for (const [o, j] of c.map) for (let k = 0; k < 4; k++) aux[j * 4 + k] = bodyAux[o * 4 + k];
-    let P = c.P, F = c.faces, I = fids, A = aux;
-    if (hi) { const r = catmullClark(P, F, I, [A]); P = r.P; F = r.faces; I = r.fids; A = r.chans[0]; }
-    parts.push({ name: 'body', P, faces: F, fids: I, aux: A, flut: new Float64Array(P.length / 3), side: 'front' });
+    // skin never flutters: its flutter channel carries the hairline distance (painted short hair)
+    const sdc = new Float64Array(n);
+    for (const [o, j] of c.map) sdc[j] = o < NV ? encSD(hairSD[o]) : 0;
+    let P = c.P, F = c.faces, I = fids, A = aux, S = sdc;
+    if (hi) { const r = catmullClark(P, F, I, [A, S]); P = r.P; F = r.faces; I = r.fids; A = r.chans[0]; S = r.chans[1]; }
+    parts.push({ name: 'body', P, faces: F, fids: I, aux: A, flut: S, side: 'front' });
   }
   // --- hair shell (offset in posed space so its edge meets the scalp exactly)
   {
@@ -1402,11 +1493,33 @@ function buildTier(hi) {
       const jj = hairShell.map.get(o);
       const off = len(sub(get3(hairShell.P, jj), get3(V0, o)));
       set3(c.P, j, add(get3(Pp, o), mul(get3(bodyNposed, o), off)));
-      aux[j * 4 + 1] = hairShell.prof[jj];
+      // aux: x = shell height above the scalp (m, /0.01), y = hairline distance, z = fur layer (0 = base shell)
+      aux[j * 4] = clamp(off / 0.01, 0, 1);
+      aux[j * 4 + 1] = encSD(hairSD[o]);
     }
     let P = c.P, F = c.faces, I = c.faces.map(() => 4), A = aux;
     if (hi) { const r = catmullClark(P, F, I, [A]); P = r.P; F = r.faces; I = r.fids; A = r.chans[0]; }
     parts.push({ name: 'hair', P, faces: F, fids: I, aux: A, flut: new Float64Array(P.length / 3), side: 'front' });
+    if (hi) {
+      // fur shells (high tier only): three more layers above the hair shell, alpha-tested in the shader
+      // into strand clumps, so the silhouette and the hairline break up instead of reading as a painted cap.
+      // They taper to nothing at the hairline. Kept out of the AO/thickness ray caster (see allHi).
+      const n2 = P.length / 3;
+      const N = vertexNormals(P, F, n2);
+      const NL = 3;
+      const FP = new Float64Array(n2 * 3 * NL), FA = new Float64Array(n2 * 4 * NL), FF = [];
+      for (let k = 1; k <= NL; k++) {
+        const b = (k - 1) * n2;
+        for (let i = 0; i < n2; i++) {
+          const sd = (A[i * 4 + 1] - 0.5) * 0.04;
+          const ramp = smooth(0.0, 0.012, sd);
+          set3(FP, b + i, add(get3(P, i), mul(get3(N, i), 0.0014 * k * (0.35 + 0.65 * ramp))));
+          FA.set([A[i * 4], A[i * 4 + 1], k / NL, 0], (b + i) * 4);
+        }
+        for (const f of F) FF.push(f.map((v) => v + b));
+      }
+      fur = ({ name: 'hairfur', P: FP, faces: FF, fids: FF.map(() => 4), aux: FA, flut: new Float64Array(n2 * NL), side: 'front', noOcclude: true });
+    }
   }
   // --- clothes
   for (const [name, cl, mat] of [['shirt', shirt, 5], ['shorts', shorts, 11]]) {
@@ -1429,6 +1542,7 @@ function buildTier(hi) {
     const P = new Float64Array(g.P.length * 3); g.P.forEach((p, i) => set3(P, i, restToHead(p)));
     parts.push({ name: g.mat === 10 ? 'lens' : 'frame', P, faces: g.faces, fids: g.faces.map(() => g.mat), aux: new Float64Array(g.P.length * 4), flut: new Float64Array(g.P.length), side: g.mat === 10 ? 'double' : 'front' });
   }
+  if (fur) parts.push(fur);
   return parts;
 }
 log('building tiers');
@@ -1470,7 +1584,7 @@ function hemiDirs(n) {
 }
 const allHi = (() => {
   let nv = 0; const T = []; const Ps = [];
-  for (const p of tiers.high) { const t = triangulate(p.P, p.faces); for (const v of t) T.push(v + nv); nv += p.P.length / 3; Ps.push(p.P); }
+  for (const p of tiers.high) { if (p.noOcclude) continue; const t = triangulate(p.P, p.faces); for (const v of t) T.push(v + nv); nv += p.P.length / 3; Ps.push(p.P); }
   const P = new Float64Array(nv * 3); let o = 0; for (const a of Ps) { P.set(a, o); o += a.length; }
   return { P, T };
 })();
@@ -1498,7 +1612,17 @@ function bakeAO(part, nrm, rays, isLow) {
     if (part.name === 'body') {
       const tt = bvhBody.cast(sub(p, mul(nn, isLow ? 0.0 : 0.0006)), mul(nn, -1), 0.0003, 0.08);
       thick[i] = Math.min(tt, 0.08);
-    } else thick[i] = part.name === 'hat' ? 0.004 : part.name === 'hair' ? 0.01 : 0.002;
+    } else thick[i] = part.name === 'hat' ? 0.004 : part.name.startsWith('hair') ? 0.01 : 0.002;
+  }
+  if (part.name === 'body') {
+    // single rays through thin folds (the ear's helix, between fingers) are noisy vertex to vertex,
+    // which showed as speckle in the translucency: relax the thickness over the mesh (min-biased so
+    // thin edges stay thin)
+    const adj = adjacency(part.faces, n);
+    for (let it = 0; it < 4; it++) {
+      const c = thick.slice();
+      for (let i = 0; i < n; i++) { let s = c[i] * 2, w = 2; for (const j of adj[i]) { s += c[j]; w++; } thick[i] = Math.min(s / w, c[i] * 1.6); }
+    }
   }
   return { ao, thick };
 }

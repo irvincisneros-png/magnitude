@@ -5,7 +5,7 @@
  "tiers": {
   "high": {
    "file": "figure_high.bin",
-   "bytes": 1956124,
+   "bytes": 2105648,
    "quant": {
     "offset": [
      -0.008181133368335286,
@@ -20,24 +20,24 @@
    },
    "geometries": {
     "front": {
-     "vertexCount": 54591,
-     "indexCount": 325068,
+     "vertexCount": 59730,
+     "indexCount": 353580,
      "indexType": "uint16",
      "position": 0,
-     "normal": 327548,
-     "attr": 545912,
-     "aux": 764276,
-     "index": 982640
+     "normal": 358380,
+     "attr": 597300,
+     "aux": 836220,
+     "index": 1075140
     },
     "double": {
      "vertexCount": 11065,
      "indexCount": 62088,
      "indexType": "uint16",
-     "position": 1632776,
-     "normal": 1699168,
-     "attr": 1743428,
-     "aux": 1787688,
-     "index": 1831948
+     "position": 1782300,
+     "normal": 1848692,
+     "attr": 1892952,
+     "aux": 1937212,
+     "index": 1981472
     }
    }
   },
