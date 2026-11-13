@@ -63,9 +63,9 @@ export const zodiFrag = /* glsl */ `
 /** Screen-space ribbon for orbit lines: constant pixel width, soft glow, brighter comet trail behind the planet. */
 export const orbitVert = /* glsl */ `
   uniform vec2 uRes; uniform float uHalf; uniform float uTrailLen; uniform float uNear;
-  uniform float uPhase[12]; uniform float uAlpha[12];
+  uniform float uPhase[18]; uniform float uAlpha[18];
   attribute vec3 aNext; attribute float aEnd; attribute vec4 aInfo; attribute vec3 aCol;
-  varying float vSide; varying vec3 vCol; varying float vTrail; varying float vA;
+  varying float vSide; varying vec3 vCol; varying float vTrail; varying float vA; varying float vE; varying float vRing;
   vec4 clipTo(vec4 a, vec4 b) {
     if (a.w >= uNear) return a;
     return mix(a, b, (uNear - a.w) / max(b.w - a.w, 1e-9));
@@ -75,7 +75,7 @@ export const orbitVert = /* glsl */ `
     vec4 c0 = vp * vec4(position, 1.0);
     vec4 c1 = vp * vec4(aNext, 1.0);
     if (c0.w < uNear && c1.w < uNear) {
-      gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vSide = 0.0; vCol = vec3(0.0); vTrail = 0.0; vA = 0.0; return;
+      gl_Position = vec4(2.0, 2.0, 2.0, 1.0); vSide = 0.0; vCol = vec3(0.0); vTrail = 0.0; vA = 0.0; vE = 0.0; vRing = 0.0; return;
     }
     vec4 a0 = clipTo(c0, c1), a1 = clipTo(c1, c0);
     vec4 cC = aEnd < 0.5 ? a0 : a1;
@@ -87,17 +87,25 @@ export const orbitVert = /* glsl */ `
     gl_Position = vec4(cC.xy + off * cC.w, cC.z, cC.w);
     int idx = int(aInfo.y + 0.5);
     float behind = mod(uPhase[idx] - aInfo.z, 6.2831853);
-    vTrail = pow(max(0.0, 1.0 - behind / uTrailLen), 2.2);
-    vSide = aInfo.x;
-    vCol = aCol * aInfo.w;
+    float ring = step(aInfo.w, 0.0);
+    vTrail = pow(max(0.0, 1.0 - behind / uTrailLen), 2.2) * (1.0 - ring);
+    vSide = aInfo.x; vE = aInfo.z; vRing = ring;
+    vCol = aCol * abs(aInfo.w);
     vA = uAlpha[idx];
   }`;
 
 export const orbitFrag = /* glsl */ `
   uniform float uHalf; uniform float uDpr;
-  varying float vSide; varying vec3 vCol; varying float vTrail; varying float vA;
+  varying float vSide; varying vec3 vCol; varying float vTrail; varying float vA; varying float vE; varying float vRing;
   void main() {
     float d = abs(vSide) * uHalf / uDpr;               // css px from the line centre
+    if (vRing > 0.5) {
+      float fd = fract(vE * 19.0);
+      float dash = smoothstep(0.0, 0.1, fd) * (1.0 - smoothstep(0.55, 0.65, fd));
+      float line = exp(-d * d / 0.4) + 0.2 * exp(-d * d / 5.0);
+      gl_FragColor = vec4(vCol * line * vA * (0.25 + 0.75 * dash), 0.0);
+      return;
+    }
     float core = exp(-d * d / 0.55);
     float glow = exp(-d * d / 5.5);
     float k = 0.28 + 2.3 * vTrail;
@@ -260,7 +268,7 @@ export const helioFrag = /* glsl */ `
     float ndv = abs(dot(normalize(vN), normalize(vV)));
     float f = pow(1.0 - ndv, 2.6);
     vec3 col = mix(vec3(0.30, 0.45, 0.95), vec3(0.55, 0.78, 1.0), f);
-    gl_FragColor = vec4(col * (0.004 + 0.16 * f) * uA, 0.0);
+    gl_FragColor = vec4(col * (0.002 + 0.10 * f) * uA, 0.0);
   }`;
 
 /** Guide line with a fade along its length (aT 0..1). */
@@ -270,3 +278,54 @@ export const guideVert = /* glsl */ `
 export const guideFrag = /* glsl */ `
   uniform float uA; uniform vec3 uCol; varying float vT;
   void main() { gl_FragColor = vec4(uCol * uA * (0.25 + 0.75 * (1.0 - vT)), 0.0); }`;
+
+/** Oort cloud + Hills cloud as analytic haze: a fullscreen ray pass, hollow shells, limb-brightened. */
+export const hazeVert = /* glsl */ `
+  varying vec2 vN;
+  void main() { vN = position.xy; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+export const hazeFrag = /* glsl */ `
+  uniform mat4 uInvProj; uniform mat4 uCamWorld; uniform vec3 uCamPos;
+  uniform float uShell; uniform float uHills; uniform float uAU; uniform float uDpr;
+  varying vec2 vN;
+  float seg(vec3 o, vec3 d, float R, float f) {
+    vec3 sc = vec3(1.0, 1.0 / f, 1.0);
+    vec3 op = o * sc, dp = d * sc;
+    float A = dot(dp, dp), B = dot(op, dp), C = dot(op, op) - R * R;
+    float disc = B * B - A * C;
+    if (disc <= 0.0) return 0.0;
+    float q = sqrt(disc);
+    float t1 = (-B - q) / A, t2 = (-B + q) / A;
+    return max(t2, 0.0) - max(t1, 0.0);
+  }
+  float h31(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  void main() {
+    vec4 v = uInvProj * vec4(vN, 1.0, 1.0);
+    vec3 d = normalize((uCamWorld * vec4(normalize(v.xyz / v.w), 0.0)).xyz);
+    vec3 o = uCamPos;
+    float RO = 100000.0 * uAU, RI = 30000.0 * uAU;
+    float cs = (seg(o, d, RO, 1.0) - seg(o, d, RI, 1.0)) / RO;
+    float HO = 20000.0 * uAU, HI = 2000.0 * uAU;
+    float ch = (seg(o, d, HO, 0.38) - seg(o, d, HI, 0.38)) / HO;
+    // tiny uniform icy specks, tied to direction so they do not swim
+    float sp = step(0.9965, h31(floor(d * 900.0))) * 0.5;
+    float shell = pow(max(cs, 0.0), 1.8) * 0.018 * uShell;
+    float hills = max(ch, 0.0) * 0.03 * uHills;
+    vec3 col = vec3(0.50, 0.68, 1.0) * (shell * (1.0 + sp * 1.2) + hills * (1.0 + sp * 1.0));
+    gl_FragColor = vec4(col, 0.0);
+  }`;
+
+/** Heliotail: particles streaming down the long tail, flowing away from the nose. */
+export const tailVert = /* glsl */ `
+  uniform float uTime; uniform float uDpr; uniform vec3 uAxis; uniform vec3 uP; uniform vec3 uQ; uniform float uAU; uniform float uGain;
+  attribute vec4 aT;   // phase, radial fraction, angle, brightness
+  varying float vI;
+  void main() {
+    float s = fract(aT.x + uTime * 0.012);
+    float rad = (110.0 + 220.0 * s) * aT.y * uAU;
+    float ang = aT.z * 6.2831853;
+    float len = (60.0 + 780.0 * s) * uAU;
+    vec3 p = uAxis * len + (uP * cos(ang) + uQ * sin(ang)) * rad;
+    gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+    gl_PointSize = 1.6 * uDpr;
+    vI = uGain * aT.w * smoothstep(0.0, 0.1, s) * (1.0 - smoothstep(0.55, 1.0, s));
+  }`;

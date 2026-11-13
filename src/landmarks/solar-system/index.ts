@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import type { FrameState, InitContext, LandmarkFactory, LandmarkLabel, LandmarkMeta, Quality } from '../../engine/types';
 import {
-  beadFrag, beadVert, bodyFrag, bodyVert, discFrag, dustVert, glareFrag, guideFrag, guideVert, helioFrag, helioVert,
+  beadFrag, beadVert, bodyFrag, bodyVert, discFrag, hazeFrag, hazeVert, tailVert, glareFrag, guideFrag, guideVert, helioFrag, helioVert,
   orbitFrag, orbitVert, quadVert, skyFrag, skyVert, starFrag, starVert, zodiFrag,
 } from './shaders';
 
@@ -24,7 +24,7 @@ const SUN_R = 6.957e8 / UNIT_M;
 const TAU = Math.PI * 2;
 const D2R = Math.PI / 180;
 const T_START = 26.87;                        // years since J2000 → roughly "now"
-const NB = 12;                                // orbits / beads drawn as bodies
+const NB = 14;                                // orbits / beads drawn as bodies
 const smooth = (x: number, a: number, b: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -66,8 +66,18 @@ const BODIES: Body[] = [
   { name: 'Pluto', a: 39.48, e: 0.2488, i: 17.16, node: 110.299, varpi: 224.07, L: 238.9, col: [0.9, 0.78, 0.66], size: 3.0, dwarf: true },
   { name: 'Eris', a: 67.9, e: 0.436, i: 44.04, node: 35.95, varpi: 187.3, L: 392.0 - 360, col: [0.92, 0.94, 1.0], size: 3.0, dwarf: true },
   { name: 'Makemake', a: 45.5, e: 0.159, i: 28.98, node: 79.4, varpi: 15.0, L: 344.0, col: [1.0, 0.72, 0.58], size: 3.0, dwarf: true },
+  { name: 'Sedna', a: 506, e: 0.8496, i: 11.93, node: 144.5, varpi: 96.0, L: 95.0, col: [1.0, 0.36, 0.26], size: 3.0, dwarf: true },
+  { name: '2012 VP113', a: 266, e: 0.693, i: 24.1, node: 90.8, varpi: 24.6, L: 18.6, col: [0.95, 0.6, 0.45], size: 2.6, dwarf: true },
   { name: 'Haumea', a: 43.1, e: 0.195, i: 28.2, node: 121.9, varpi: 240.0, L: 258.0, col: [0.9, 0.95, 1.0], size: 3.0, dwarf: true },
 ];
+interface Ring { a: number; label: string; lon: number; hiZoom?: number }
+const RINGS: Ring[] = [
+  { a: 173.1, label: '1 light-day ≈ 173 AU', lon: 40 },
+  { a: 1000, label: '1,000 AU', lon: 130 },
+  { a: 5194, label: '1 light-month ≈ 5,200 AU', lon: 215 },
+  { a: 63241, label: '1 light-year ≈ 63,000 AU', lon: 300, hiZoom: 4.9 },
+];
+const NORB = NB + RINGS.length;
 const bodyM0 = (b: Body) => (b.L - b.varpi) * D2R;
 
 function solveE(M: number, e: number) {
@@ -123,8 +133,16 @@ labels.push({ text: 'Heliopause · edge of the Sun’s wind (≈120 AU)', positi
 const VOY_DIR = eclDir(255.9, 35.1);
 const voyPos = VOY_DIR.clone().multiplyScalar(170 * AU_U);
 labels.push({ text: 'Voyager 1 · ≈170 AU (approximate)', position: [voyPos.x, voyPos.y, voyPos.z], zoomRange: zr(170, 0.9, 12) });
-const oortLabel = eclDir(25, 22).multiplyScalar(45_000 * AU_U);
+const oortLabel = eclDir(25, 22).multiplyScalar(70_000 * AU_U);
 labels.push({ text: 'Oort cloud (predicted, never directly seen)', position: [oortLabel.x, oortLabel.y, oortLabel.z], zoomRange: [2.95, 4.9] });
+const hillsLabel = eclDir(70, 8).multiplyScalar(9000 * AU_U);
+labels.push({ text: 'Inner Oort (Hills) cloud (predicted)', position: [hillsLabel.x, hillsLabel.y, hillsLabel.z], zoomRange: zr(9000, 0.7, 7) });
+const tailLabel = NOSE.clone().multiplyScalar(-280 * AU_U);
+labels.push({ text: 'Heliotail (predicted shape)', position: [tailLabel.x, tailLabel.y, tailLabel.z], zoomRange: zr(280, 0.7, 6) });
+RINGS.forEach((r) => {
+  const p = eclDir(r.lon, 0).multiplyScalar(r.a * AU_U);
+  labels.push({ text: r.label, position: [p.x, p.y, p.z], zoomRange: [Math.log10(r.a * AU_U * 0.7), r.hiZoom ?? Math.log10(r.a * AU_U * 10)] });
+});
 const scatLabel = eclDir(300, 12).multiplyScalar(110 * AU_U);
 labels.push({ text: 'Scattered disc', position: [scatLabel.x, scatLabel.y, scatLabel.z], zoomRange: zr(110, 0.9, 5) });
 for (const s of STARS) {
@@ -228,7 +246,6 @@ const SETS: SetDef[] = [
   { name: 'scattered', base: 6000, gen: genScattered, tint: [0.5, 0.78, 0.9], size: 1.4, gain: 0.55, radiusAU: 120, fadePx: [30, 90], seed: 16 },
 ];
 const countScale = (q: Quality) => (q === 'low' ? 0.3 : q === 'medium' ? 0.6 : 1);
-const OORT_N = { low: 9000, medium: 22000, high: 42000 };
 
 const factory: LandmarkFactory = () => {
   const scene = new THREE.Scene();
@@ -266,16 +283,20 @@ const factory: LandmarkFactory = () => {
     vertexShader: orbitVert, fragmentShader: orbitFrag, ...additive, side: THREE.DoubleSide,
     uniforms: {
       uRes: { value: new THREE.Vector2(1000, 800) }, uHalf: { value: 4 }, uDpr: { value: 1 }, uTrailLen: { value: 2.1 }, uNear: { value: 0.01 },
-      uPhase: { value: new Array(12).fill(0) }, uAlpha: { value: new Array(12).fill(1) },
+      uPhase: { value: new Array(NORB).fill(0) }, uAlpha: { value: new Array(NORB).fill(1) },
     },
   }));
   {
-    const NV = NB * SEG * 4;
+    const NV = NORB * SEG * 4;
     const pos = new Float32Array(NV * 3), nxt = new Float32Array(NV * 3), endA = new Float32Array(NV);
     const info = new Float32Array(NV * 4), col = new Float32Array(NV * 3);
     const idx: number[] = [];
     const p0 = new THREE.Vector3(), p1 = new THREE.Vector3();
-    BODIES.forEach((b, bi) => {
+    const ORBS = [
+      ...BODIES.map((b) => ({ ...b, ring: false })),
+      ...RINGS.map((r) => ({ a: r.a, e: 0, i: 0, node: 0, varpi: 0, col: [0.45, 0.72, 0.9] as [number, number, number], dwarf: false, ring: true })),
+    ];
+    ORBS.forEach((b, bi) => {
       for (let k = 0; k < SEG; k++) {
         const E0 = (k / SEG) * TAU, E1 = ((k + 1) / SEG) * TAU;
         orbitPoint(b.a, b.e, b.i, b.node, b.varpi, E0, p0);
@@ -286,7 +307,7 @@ const factory: LandmarkFactory = () => {
           const vi = base + v;
           pos.set([p0.x, p0.y, p0.z], vi * 3); nxt.set([p1.x, p1.y, p1.z], vi * 3);
           endA[vi] = end;
-          info.set([side, bi, end ? E1 : E0, b.dwarf ? 0.42 : 1], vi * 4);
+          info.set([side, bi, end ? E1 : E0, b.ring ? -0.55 : b.dwarf ? 0.42 : 1], vi * 4);
           const c = b.col;
           col.set([0.55 * c[0] + 0.45, 0.55 * c[1] + 0.45, 0.55 * c[2] + 0.45], vi * 3);
         }
@@ -359,34 +380,42 @@ const factory: LandmarkFactory = () => {
     }
   };
 
-  // ---- Oort cloud
-  const oortMat = track(new THREE.ShaderMaterial({
-    vertexShader: dustVert, fragmentShader: bodyFrag, ...additive,
-    uniforms: { uDpr: { value: 1 }, uSize: { value: 1.6 }, uGain: { value: 0.2 }, uTint: { value: new THREE.Vector3(0.7, 0.85, 1.0) } },
+  // ---- Oort + Hills clouds: analytic haze (fullscreen ray pass), never points
+  const hazeMat = track(new THREE.ShaderMaterial({
+    vertexShader: hazeVert, fragmentShader: hazeFrag, ...additive,
+    uniforms: {
+      uInvProj: { value: new THREE.Matrix4() }, uCamWorld: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() },
+      uShell: { value: 1 }, uHills: { value: 1 }, uAU: { value: AU_U }, uDpr: { value: 1 },
+    },
   }));
-  let oort: THREE.Points | null = null;
-  let oortN = 1;
-  const buildOort = (q: Quality) => {
-    if (oort) { scene.remove(oort); oort.geometry.dispose(); }
-    const n = OORT_N[q]; oortN = n;
-    const r = mulberry(4242);
-    const pos = new Float32Array(n * 3), aR = new Float32Array(n);
-    const lo = Math.log(2000), hi = Math.log(100000);
-    for (let i = 0; i < n; i++) {
-      const rAU = Math.exp(lo + (hi - lo) * Math.pow(r(), 0.7));
-      const flat = 0.3 + 0.7 * smooth(rAU, 2000, 22000);
-      const x = gauss(r), y = gauss(r) * flat, z = gauss(r);
-      const l = Math.hypot(x, y, z) || 1;
-      pos.set([(x / l) * rAU * AU_U, (y / l) * rAU * AU_U, (z / l) * rAU * AU_U], i * 3);
-      aR[i] = r();
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('aR', new THREE.BufferAttribute(aR, 1));
-    oort = new THREE.Points(g, oortMat);
-    oort.frustumCulled = false; oort.renderOrder = 3;
-    scene.add(oort);
-  };
+  const hazeGeo = track(new THREE.BufferGeometry());
+  hazeGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+  const haze = new THREE.Mesh(hazeGeo, hazeMat);
+  haze.frustumCulled = false; haze.renderOrder = 1;
+  scene.add(haze);
+
+  // ---- heliotail streamers
+  const tailMat = track(new THREE.ShaderMaterial({
+    vertexShader: tailVert, fragmentShader: bodyFrag, ...additive,
+    uniforms: {
+      uTime: { value: 0 }, uDpr: { value: 1 }, uAxis: { value: NOSE.clone().negate() }, uP: { value: new THREE.Vector3() },
+      uQ: { value: new THREE.Vector3() }, uAU: { value: AU_U }, uGain: { value: 0.2 }, uTint: { value: new THREE.Vector3(0.45, 0.65, 1.0) },
+    },
+  }));
+  {
+    const ax = NOSE.clone().negate();
+    const pv = new THREE.Vector3().crossVectors(ax, EZ).normalize(), qv = new THREE.Vector3().crossVectors(ax, pv).normalize();
+    tailMat.uniforms.uP.value.copy(pv); tailMat.uniforms.uQ.value.copy(qv);
+    const n = 3500, r = mulberry(77);
+    const att = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) att.set([r(), Math.sqrt(r()), r(), 0.4 + 0.6 * r()], i * 4);
+    const g = track(new THREE.BufferGeometry());
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    g.setAttribute('aT', new THREE.BufferAttribute(att, 4));
+    const pts = new THREE.Points(g, tailMat);
+    pts.frustumCulled = false; pts.renderOrder = 3;
+    scene.add(pts);
+  }
 
   // ---- heliosphere
   const helioGeo = track(new THREE.SphereGeometry(1, 96, 64));
@@ -396,7 +425,7 @@ const factory: LandmarkFactory = () => {
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i).normalize();
       const c = v.dot(NOSE);
-      const f = c >= 0 ? 1 + 0.2 * (1 - c) : 1.2 + 2.2 * Math.pow(-c, 1.7);
+      const f = c >= 0 ? 1 + 0.2 * (1 - c) : 1.2 + 5.5 * Math.pow(-c, 2.0);
       v.multiplyScalar(120 * AU_U * f);
       p.setXYZ(i, v.x, v.y, v.z);
     }
@@ -482,7 +511,7 @@ const factory: LandmarkFactory = () => {
 
   const applyQuality = (q: Quality) => {
     quality = q;
-    buildSets(q); buildOort(q); buildSky(q);
+    buildSets(q); buildSky(q);
     const sp = q === 'low' ? 0 : 1;
     starMat.uniforms.uSpikes.value = sp; sunStarMat.uniforms.uSpikes.value = sp;
   };
@@ -536,10 +565,15 @@ const factory: LandmarkFactory = () => {
         beadPos[i * 3] = bodyPos[i].x; beadPos[i * 3 + 1] = bodyPos[i].y; beadPos[i * 3 + 2] = bodyPos[i].z;
         const pxR = px(b.a);
         const big = pxR / (H / dpr);
-        alpha[i] = smooth(pxR, 9, 30) * (b.dwarf ? 0.4 : 1) * (1 - smooth(big, b.dwarf ? 1.3 : 3.5, b.dwarf ? 3.2 : 9));
+        alpha[i] = smooth(pxR, 9, 30) * (b.dwarf ? 0.4 : 1) * (1 - smooth(big, b.dwarf ? 0.8 : 3.5, b.dwarf ? 2.0 : 9));
         beadFade[i] = smooth(pxR, 6, 20);
         const L = meta.labels![i].position;
         L[0] = bodyPos[i].x; L[1] = bodyPos[i].y; L[2] = bodyPos[i].z;
+      });
+      RINGS.forEach((r, ri) => {
+        const pxR = px(r.a), big = pxR / (H / dpr), k = NB + ri;
+        alpha[k] = smooth(pxR, 30, 90) * (1 - smooth(big, 2.2, 5)) * 0.55;
+        phase[k] = 0;
       });
       const voyPx = px(170);
       beadFade[NB] = smooth(voyPx, 14, 40);
@@ -560,11 +594,17 @@ const factory: LandmarkFactory = () => {
         u.uGain.value = so.def.gain * f * (so.def.name === 'dust' ? 1 - smooth(s, 11.9, 12.7) * 0.7 : 1) * (quality === 'low' ? 1.6 : 1);
       }
 
-      // ---- Oort cloud: keep per-point brightness sensible as the shell shrinks to a disc
-      const shellPx = 1660 * ppu;
-      const area = Math.PI * shellPx * shellPx;
-      oortMat.uniforms.uDpr.value = dpr;
-      oortMat.uniforms.uGain.value = Math.min(1, Math.max(0.03, area / (oortN * 9))) * 0.15 * smooth(1660 * ppu, 4, 30);
+      // ---- Oort / Hills haze (fullscreen ray pass), heliotail
+      const hu = hazeMat.uniforms;
+      hu.uInvProj.value.copy(cam.projectionMatrixInverse);
+      hu.uCamWorld.value.copy(cam.matrixWorld);
+      hu.uCamPos.value.copy(cam.position);
+      hu.uDpr.value = dpr;
+      hu.uShell.value = 1 - smooth(s, 17.0, 17.5) * 0.3;
+      hu.uHills.value = smooth(s, 13.2, 14.2) * (1 - smooth(s, 15.2, 16.4));
+      haze.visible = s > 13.2;
+      tailMat.uniforms.uTime.value = frame.time; tailMat.uniforms.uDpr.value = dpr;
+      tailMat.uniforms.uGain.value = 0.22 * smooth(px(120), 12, 40) * (1 - smooth(s, 15.4, 16.4));
 
       // ---- heliosphere
       helioMat.uniforms.uA.value = smooth(px(120), 30, 110) * (1 - smooth(s, 15.4, 16.6));
@@ -600,7 +640,6 @@ const factory: LandmarkFactory = () => {
     setQuality(q: Quality) { applyQuality(q); },
     dispose() {
       for (const so of setObjs) if (so.pts) so.pts.geometry.dispose();
-      if (oort) oort.geometry.dispose();
       if (sky) sky.geometry.dispose();
       for (const d of disposables) d.dispose();
     },
