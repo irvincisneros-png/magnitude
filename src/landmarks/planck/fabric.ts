@@ -1,7 +1,7 @@
 /**
  * The "fabric of space": a 3D lattice of fine lines (the textbook space-time grid), drawn at
  * three self-similar sizes. In the vertex shader every line is
- * - pushed around the nearest foam bubble (so the grid visibly wraps and pinches around it),
+ * - puckered into small dimples,
  * - tugged by a slow, large warp,
  * - and shaken by fine uncertainty jitter that grows as you dive deeper.
  * Lines fade near the camera, far away and outside the froth, so no hard edges show.
@@ -28,18 +28,9 @@ const vert = /* glsl */ `
     // a soft pull towards the centre, like the textbook 'well' in the fabric of space
     float rr = length(p) / uScale;
     p *= 1.0 - 0.28 * exp(-rr * rr * 0.6);
-    // bend around the nearest scale-1 bubbles (two offset lattices)
-    for (int k = 0; k < 2; k++) {
-      vec3 off = vec3(float(k) * 0.5);
-      vec3 cell = floor(p - off);
-      vec3 c; float r, a, fl, seed;
-      bubbleAt(cell, 1.0, off, float(k), uTime, uJit, c, r, a, fl, seed);
-      vec3 v = p - c;
-      float d = length(v);
-      float R = r * 1.7;
-      float push = (1.0 - smoothstep(0.0, R, d)) * a;
-      p = c + v * (1.0 + push * (R / max(d, 1e-4) - 1.0) * 0.7);
-    }
+    // puckers: the grid is pulled into small dimples, like space being tugged locally
+    vec3 pk = sin(p * (5.3 / uScale) + uTime * vec3(0.5, 0.37, 0.43));
+    p += 0.035 * uScale * pk.yzx * pk.zxy;
     // uncertainty jitter: a fine shake that re-rolls many times a second
     float tick = floor(uTime * 14.0);
     vec3 jv = hash33(floor(position * 7.0) + tick) - 0.5;

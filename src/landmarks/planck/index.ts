@@ -6,13 +6,13 @@
  * Zoom story (zoom = s − log10(1.6e-35)):
  *   +2.8  a faint pearly shimmer at the centre of the desert's blackness, fading to nothing
  *   +1…+2 a frayed ball of froth wrapped in a warped grid: the "fabric" of space
- *    0…+0.7 hero: iridescent bubbles forming, merging and popping, tunnels ("throats")
- *         between them, the grid pinched around each bubble
+ *    0…+0.7 hero: clumps of packed foam cells (shared flat walls, bright borders, thin-film
+ *         colour) draining, popping and reforming around dark voids, nested in depth
  *   −0.7  the bottom: froth all around, the grid shaking itself apart, static everywhere
  */
 import * as THREE from 'three';
 import type { FrameState, Landmark, LandmarkFactory, LandmarkMeta, Quality } from '../../engine/types';
-import { createFoam } from './foam';
+import { createFoam, SHELL_K, SHELL_R0 } from './foam';
 import { createFabric } from './fabric';
 import { createMotes } from './motes';
 
@@ -98,9 +98,10 @@ const factory: LandmarkFactory = (): Landmark => {
       u.uBright.value = 1 - 0.75 * smooth(1.6, 2.8, z);
       u.uHalo.value = smooth(0.3, 1.6, z);
       u.uStatic.value = smooth(-0.15, -0.7, z);
-      u.uScaleW.value.set(1, 1, 1 - smooth(0.4, 0.9, z), smooth(0.0, -0.45, z));
-      u.uOcc.value.set(0.78 - 0.3 * smooth(0.2, -0.6, z), 0.7 - 0.25 * smooth(-0.2, -0.7, z));
-      u.uGyro.value = 0.7 + 0.8 * smooth(0.5, -0.6, z);
+      // first skin to test: the largest one that is not far behind / around the camera
+      const camD = u.uCamD.value as number;
+      u.uK0.value = Math.max(0, Math.ceil(Math.log(SHELL_R0 / (2.6 * camD)) / Math.log(1 / SHELL_K)));
+      u.uVoid.value = 0.62 - 0.17 * smooth(0.0, -0.7, z);   // denser froth at the bottom
       foam.backUniforms.uBack.value = 1 - smooth(1.1, 2.4, z);
 
       const fu = fabric.mats[0].uniforms;
@@ -111,7 +112,7 @@ const factory: LandmarkFactory = (): Landmark => {
       fabric.scales.forEach((s, i) => {
         // each lattice is strongest when its spacing is about a quarter of the view
         const x = (Math.log10((0.5 * s) / view) - Math.log10(0.22)) / 0.5;
-        fabric!.mats[i].uniforms.uOpacity.value = 0.36 * Math.exp(-x * x) * fabricFade * (1 - 0.45 * smooth(-0.3, -0.7, z));
+        fabric!.mats[i].uniforms.uOpacity.value = 0.22 * Math.exp(-x * x) * fabricFade * (1 - 0.45 * smooth(-0.3, -0.7, z));
       });
 
       const mu = motes.uniforms;
