@@ -1,5 +1,5 @@
 /**
- * Earth — Wollongong, NSW at the origin (local up = +Y, north = −Z), Earth's centre at (0, −0.5, 0).
+ * Earth — Woonona Beach, NSW (northern Wollongong) at the origin (local up = +Y, north = −Z), Earth's centre at (0, −0.5, 0).
  *
  * One full-screen ray-traced pass draws the globe, a drifting cloud layer with shadows, city
  * lights and a single-scattering atmosphere (blue limb, warm terminator, aerial perspective).
@@ -10,7 +10,7 @@
  */
 import * as THREE from 'three';
 import type { FrameState, InitContext, Landmark, LandmarkFactory, LandmarkMeta, Quality } from '../../engine/types';
-import { anchorBasis, geoToLocalPoint, localSkyDir, polarAxisLocal } from './geo';
+import { anchorBasis, geoToLocalPoint, localSkyDir, polarAxisLocal, WOLLONGONG } from './geo';
 import { planetFrag, planetVert, starFrag, starVert, UNIT_M } from './shaders';
 
 const meta: LandmarkMeta = {
@@ -21,7 +21,7 @@ const meta: LandmarkMeta = {
   evidence: 'measured',
   nesting: 'true',
   blurb:
-    'Earth is about 12,700 km across, and you are standing on it near Wollongong, NSW. The air that keeps us alive is a thin blue skin, only about 1% as thick as Earth is wide.',
+    'Earth is about 12,700 km across, and you are standing on it at Woonona Beach, NSW. The air that keeps us alive is a thin blue skin, only about 1% as thick as Earth is wide.',
   howWeKnow: {
     instrument: 'Satellites and GPS',
     text:
@@ -31,18 +31,21 @@ const meta: LandmarkMeta = {
   timescale: 'One spin: 24 hours. One trip around the Sun: 365¼ days',
   post: { bloom: 0.35, exposure: 1.0 },
   labels: [
-    { text: 'Wollongong, NSW', position: [0, 0, 0], zoomRange: [-3.4, -1.0] },
+    { text: 'Woonona Beach, NSW', position: [0, 0, 0], zoomRange: [-3.4, -1.3] },
+    { text: 'Wollongong', position: geoToLocalPoint(WOLLONGONG.lat, WOLLONGONG.lon), zoomRange: [-2.7, -1.5] },
     { text: 'Tasman Sea', position: geoToLocalPoint(-37.5, 157.0), zoomRange: [-2.0, -0.6] },
     { text: 'Australia', position: geoToLocalPoint(-25.5, 134.0), zoomRange: [-1.3, 0.3] },
     { text: 'Earth', position: [0, 0.1, 0], zoomRange: [-0.3, 1.6] },
   ],
 };
 
-// Region tile (Blue Marble 500 m tile D2, cropped around Wollongong) — must match the asset crop.
+// Region tile (Blue Marble 500 m tile D2, cropped around Wollongong; absolute lon/lat, so independent of the anchor) — must match the asset crop.
 const REGION = { lon0: 146.625, lat0: -30.1542, span: 2048 / 240 };
-// Sun: a summer morning in Wollongong, low over the Tasman Sea to the east-north-east.
+// Sun: a summer morning at Woonona Beach, low over the Tasman Sea to the east-north-east.
 const SUN_AZ = 72, SUN_EL = 22;
 const CLOUD_H = 2500 / UNIT_M;
+// OSM coastline signed-distance square (coast_sdf.png, 1024², ±14 km around the origin).
+const COAST_HALF_M = 14000;
 
 interface TexSet { day: THREE.Texture; night: THREE.Texture; surf: THREE.Texture; regDay: THREE.Texture; regSurf: THREE.Texture; globalW: number; regionW: number }
 const tierFiles = (q: Quality) => (q === 'high' ? { g: 4096, r: 2048 } : q === 'medium' ? { g: 2048, r: 2048 } : { g: 2048, r: 1024 });
@@ -58,6 +61,7 @@ const factory: LandmarkFactory = () => {
   let tier: Quality = 'medium';
   let texSet: TexSet | null = null;
   let clouds: THREE.Texture | null = null;
+  let coast: THREE.Texture | null = null;
   let loadToken = 0;
   let disposed = false;
   let cloudRot = 0.35;
@@ -93,6 +97,8 @@ const factory: LandmarkFactory = () => {
     tSurf: { value: null as THREE.Texture | null },
     tRegDay: { value: null as THREE.Texture | null },
     tRegSurf: { value: null as THREE.Texture | null },
+    tCoast: { value: null as THREE.Texture | null },
+    uCoastHalf: { value: COAST_HALF_M / UNIT_M },
   };
 
   const planetMat = new THREE.ShaderMaterial({
@@ -215,7 +221,8 @@ const factory: LandmarkFactory = () => {
       tier = ctx.quality;
       applyTierShader(tier);
       buildStars(tier);
-      const [set, cl] = await Promise.all([loadSet(tier), load('clouds_2048.jpg', false, true)]);
+      const [set, cl, co] = await Promise.all([loadSet(tier), load('clouds_2048.jpg', false, true), load('coast_sdf.png', false, false)]);
+      if (disposed) co.dispose(); else { coast = co; uniforms.tCoast.value = co; }
       if (disposed) { disposeSet(set); cl.dispose(); return; }
       texSet = set; clouds = cl;
       uniforms.tClouds.value = cl;
@@ -242,7 +249,7 @@ const factory: LandmarkFactory = () => {
       sun.copy(sunBase).applyQuaternion(q);
 
       // Camera altitude (precise near the origin): fade the cloud layer while passing through it.
-      // Zoomed in, Wollongong sits at the origin; zoomed out, the globe glides up so its centre is.
+      // Zoomed in, Woonona Beach sits at the origin; zoomed out, the globe glides up so its centre is.
       // The camera orbits the origin at distance d, so the shift is capped to keep a level (pitch ≥ 0)
       // camera above the globe by at least 12% of d — otherwise mid-glide views would sit inside Earth.
       const d = cam.position.length();
@@ -287,6 +294,7 @@ const factory: LandmarkFactory = () => {
       disposed = true;
       disposeSet(texSet); texSet = null;
       clouds?.dispose(); clouds = null;
+      coast?.dispose(); coast = null;
       quadGeo.dispose(); planetMat.dispose();
       if (stars) stars.geometry.dispose();
       starMat.dispose();

@@ -1,0 +1,203 @@
+{
+ "version": 1,
+ "unitMeters": 1.7,
+ "source": "MakeHuman hm08 base mesh + default skeleton/weights (CC0)",
+ "tiers": {
+  "high": {
+   "file": "figure_high.bin",
+   "bytes": 1956124,
+   "quant": {
+    "offset": [
+     -0.008181133368335286,
+     -0.5225701540614982,
+     0.020917484487847714
+    ],
+    "scale": [
+     0.1749968572402986,
+     0.5229969447722145,
+     0.13038819928541898
+    ]
+   },
+   "geometries": {
+    "front": {
+     "vertexCount": 54591,
+     "indexCount": 325068,
+     "indexType": "uint16",
+     "position": 0,
+     "normal": 327548,
+     "attr": 545912,
+     "aux": 764276,
+     "index": 982640
+    },
+    "double": {
+     "vertexCount": 11065,
+     "indexCount": 62088,
+     "indexType": "uint16",
+     "position": 1632776,
+     "normal": 1699168,
+     "attr": 1743428,
+     "aux": 1787688,
+     "index": 1831948
+    }
+   }
+  },
+  "low": {
+   "file": "figure_low.bin",
+   "bytes": 521996,
+   "quant": {
+    "offset": [
+     -0.008138557774855101,
+     -0.5224929878503034,
+     0.020880583956009044
+    ],
+    "scale": [
+     0.1749542773892591,
+     0.522820652962881,
+     0.130331383724767
+    ]
+   },
+   "geometries": {
+    "front": {
+     "vertexCount": 14581,
+     "indexCount": 86196,
+     "indexType": "uint16",
+     "position": 0,
+     "normal": 87488,
+     "attr": 145812,
+     "aux": 204136,
+     "index": 262460
+    },
+    "double": {
+     "vertexCount": 3048,
+     "indexCount": 16140,
+     "indexType": "uint16",
+     "position": 434852,
+     "normal": 453140,
+     "attr": 465332,
+     "aux": 477524,
+     "index": 489716
+    }
+   }
+  }
+ },
+ "anchorQuadric": {
+  "a_xx": -0.7988978947206834,
+  "b_xy": -1.4616061359872168,
+  "c_yy": -8.16573773542711,
+  "note": "height above the tangent plane (metres) z = a x² + b x y + c y², x along fingers, y across knuckles (metres)"
+ },
+ "anchorRadii": {
+  "alongFingersM": 0.6258622075538373,
+  "acrossKnucklesM": 0.06123145467074537
+ },
+ "heightUnits": 1,
+ "heightMeters": 1.7,
+ "groundY": -1.04555,
+ "feet": [
+  0.11553,
+  0.02314,
+  0.22349,
+  0.97471,
+  -0.14916,
+  0.07798,
+  -0.32415,
+  0.94601
+ ],
+ "feetFormat": "per foot [centreX, centreZ, dirX, dirZ] on the ground plane (units, anchor frame); order L, R",
+ "anchor": {
+  "position": [
+   0,
+   0,
+   0
+  ],
+  "normal": [
+   0,
+   1,
+   0
+  ],
+  "tangentFingers": [
+   0.86451,
+   -0.00014,
+   0.50262
+  ],
+  "tangentAcross": [
+   0.50262,
+   -0.00161,
+   -0.86451
+  ],
+  "acrossPointsTo": "thumb/index side (left of the fingers direction seen from above)"
+ },
+ "facing": [
+  0,
+  0,
+  1
+ ],
+ "gaze": [
+  -0.24135,
+  -0.02097,
+  0.97021
+ ],
+ "yawNote": "The figure faces +Z. Rotate the group about +Y (through the origin = anchor) by yaw to face direction (sin yaw, 0, cos yaw); e.g. yaw = +90° faces +X.",
+ "headCentre": [
+  0.01073,
+  -0.1027,
+  -0.00545
+ ],
+ "headTop": [
+  0.00762,
+  -0.02773,
+  0.00913
+ ],
+ "hat": {
+  "centre": [
+   0.00682,
+   -0.07735,
+   0.01098
+  ],
+  "axis": [
+   0.01614,
+   0.99917,
+   -0.03731
+  ],
+  "brimRadius": 0.12053,
+  "crownHeight": 0.04966
+ },
+ "torso": {
+  "chest": [
+   0.00664,
+   -0.38711,
+   -0.03528
+  ],
+  "pelvis": [
+   0.01015,
+   -0.5149,
+   -0.01834
+  ]
+ },
+ "bounds": {
+  "min": [
+   -0.18316,
+   -1.04551,
+   -0.10946
+  ],
+  "max": [
+   0.1668,
+   0.00037,
+   0.15129
+  ]
+ },
+ "metresToObjectScale": 0.587948,
+ "materials": {
+  "0": "skin",
+  "3": "eye",
+  "4": "hair",
+  "5": "shirt",
+  "6": "straw",
+  "7": "hat band",
+  "8": "hat lining",
+  "9": "glasses frame",
+  "10": "lens",
+  "11": "boardshorts"
+ },
+ "anchorLowTierOffsetMeters": 0
+}

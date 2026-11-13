@@ -2,7 +2,7 @@
  * Earth shaders.
  *
  * The globe, its clouds and its atmosphere are ray-traced per pixel on one full-screen pass,
- * so the sphere is mathematically exact at every zoom (from 800 m above Wollongong out to a
+ * so the sphere is mathematically exact at every zoom (from 800 m above Woonona Beach out to a
  * 5-pixel dot). All maths is written relative to the anchor at the origin, which keeps it
  * precise to well under a metre close in: for a point p, |p − C|² − R² = p·p + p.y exactly.
  *
@@ -61,6 +61,8 @@ export const planetFrag = /* glsl */ `
   uniform vec4 uRegion;       // lon0 (deg), lat0 top (deg), span (deg), texel (units)
   uniform float uGlobalTexel; // global texel size in units
   uniform sampler2D tDay, tNight, tClouds, tSurf, tRegDay, tRegSurf;
+  uniform sampler2D tCoast;   // signed distance to the OSM coastline (metres, + land), square around the origin
+  uniform float uCoastHalf;   // half-width of that square (units)
   varying vec3 vDir;
 
   // ------------------------------------------------------------ precise sphere maths
@@ -207,7 +209,7 @@ export const planetFrag = /* glsl */ `
 
   void main() {
     vec3 rd = normalize(vDir);
-    vec3 ro = uCamPos - uOffset; // camera in the content frame (Wollongong at the origin)
+    vec3 ro = uCamPos - uOffset; // camera in the content frame (Woonona Beach at the origin)
     float hc0 = heightOf(ro);
     if (hc0 < 0.0) ro += normalize(ro + vec3(0.0, R_E, 0.0)) * (-hc0 + 2.0 / UNIT_M); // under the ground: lift to the surface
 
@@ -302,11 +304,20 @@ export const planetFrag = /* glsl */ `
         nn = normalize(n - sl.x * eastL - sl.y * northL);
       }
 
-      // Water fraction with a fractal coastline when magnified
-      float m = sf.r;
-      float aa = clamp(fp / texel, 0.03, 0.5);
-      float mDet = m + dn.z * 0.22 * wd;
-      float water = smoothstep(0.5 - aa, 0.5 + aa, mix(m, mDet, wd));
+      // Signed distance to the shoreline in metres (+ = land). Within ~14 km of the origin it comes
+      // from the OpenStreetMap coastline (good to a few metres); elsewhere from the imagery's water mask.
+      float texelM = texel * UNIT_M;
+      float distTile = (0.5 - (sf.r + dn.z * 0.22 * wd)) * 2.0 * texelM;
+      vec2 cuv = vec2(P.x, -P.z) / (2.0 * uCoastHalf) + 0.5;
+      float cw = smoothstep(0.0, 0.07, min(min(cuv.x, 1.0 - cuv.x), min(cuv.y, 1.0 - cuv.y))) * step(-0.001, P.y);
+      float dist = distTile;
+      if (cw > 0.0) {
+        float lod = log2(max(fpm / (2.0 * uCoastHalf * UNIT_M / 1024.0), 1.0));
+        float dC = (textureLod(tCoast, cuv, lod).r * 255.0 - 127.5) * 4.0;
+        dist = mix(distTile, dC + dn.z * 5.0 * wd, cw);
+      }
+      float aaM = max(fpm * 0.8, 0.5);
+      float water = smoothstep(aaM, -aaM, dist);
 
       // Cloud shadow (sampled where the sun ray crosses the cloud layer)
       vec3 Ps = P + L * (CLOUD_H / max(mu, 0.08));
@@ -322,7 +333,8 @@ export const planetFrag = /* glsl */ `
       vec3 skyAmb = uSunE * vec3(0.030, 0.050, 0.095) * smoothstep(-0.2, 0.35, mu);
 
       // ---- land
-      vec3 alb = day;
+      // where the precise coastline says land but the coarse photo shows sea, use a coastal land colour
+      vec3 alb = mix(day, vec3(0.075, 0.08, 0.055), smoothstep(0.3, 0.7, sf.r) * (1.0 - water));
       #if DETAIL_OCT > 0
       if (wd > 0.0) {
         vec3 fn = afbm(P + 11.3, 4.0 / texel, fp, 0.58);
@@ -344,8 +356,9 @@ export const planetFrag = /* glsl */ `
         town = mix(vec3(0.10, 0.10, 0.085), town, 1.0 - smoothstep(6.0, 20.0, fpm));
         detailCol = mix(detailCol, town, urb);
         // beach on the land side of the shoreline
-        float beach = smoothstep(0.40, 0.49, mDet) * (1.0 - water);
-        detailCol = mix(detailCol, vec3(0.42, 0.37, 0.27) * (0.9 + 0.2 * fn.z), beach * 0.85);
+        // dry sand from the high-water line up to the foredune (~50 m)
+        float beach = (1.0 - smoothstep(38.0, 62.0, dist + fn.z * 8.0)) * (1.0 - water) * clamp(70.0 / fpm, 0.0, 1.0);
+        detailCol = mix(detailCol, vec3(0.42, 0.37, 0.27) * (0.9 + 0.2 * fn.z), beach * 0.9);
         alb = mix(alb, detailCol, wd);
       }
       #endif
@@ -371,17 +384,24 @@ export const planetFrag = /* glsl */ `
       vec3 spec = uSunE * Ts * sh * D * F * G / (4.0 * nv + 1e-4);
       float Fv = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
       vec3 skyRefl = uSunE * vec3(0.03, 0.06, 0.125) * daylight * (0.6 + 0.4 * sh);
-      vec3 waterBody = mix(vec3(0.0035, 0.010, 0.026), vec3(0.010, 0.032, 0.040), smoothstep(0.80, 0.97, sf.b));
+      vec3 waterBody = mix(vec3(0.0035, 0.010, 0.026), vec3(0.010, 0.032, 0.040), max(smoothstep(0.80, 0.97, sf.b), smoothstep(-500.0, -40.0, dist) * cw));
       vec3 ocean = waterBody * (uSunE / PI * Ts * max(mu, 0.0) * sh * 0.8 + skyAmb) * (1.0 - Fv) + skyRefl * Fv + spec;
       // surf and whitecaps when close
       #if DETAIL_OCT > 0
       if (wd > 0.0) {
-        float shore = smoothstep(0.56, 0.5, mDet) * water;
-        float bands = smoothstep(0.55, 0.95, sin(mDet * 46.0 - uTime * 0.9 + dn.y * 3.0) * 0.5 + 0.5);
-        float foam = shore * (0.35 + 0.65 * bands) * smoothstep(0.3, 0.7, dn.z * 0.5 + 0.5 + 0.3);
+        // surf zone: a few lines of broken water over ~150 m, broken up along the beach, then the swash
+        float dS = dist + dn.y * 10.0;
+        float zone = smoothstep(-170.0, -60.0, dS) * water;
+        float res = 1.0 - smoothstep(6.0, 25.0, fpm);
+        float along = smoothstep(-0.2, 0.5, dn.x + 0.25 * sin(uTime * 0.3 + dn.z * 6.0));
+        float line = smoothstep(0.82, 0.97, sin(dS * 0.11 - uTime * 0.9) * 0.5 + 0.5) * along;
+        float foam = zone * mix(0.22, 0.25 + 0.7 * line, res);
+        foam = max(foam, smoothstep(-28.0, -6.0, dS) * water * 0.85); // swash
+        float wet = smoothstep(-12.0, -2.0, dist) * water;
         float caps = smoothstep(0.80, 0.95, vnoise3(vec3(xm / 9.0, uTime * 0.25)).x * 0.5 + 0.5) * (1.0 - smoothstep(1.5, 6.0, fpm));
         foam = clamp(foam + caps * 0.5, 0.0, 1.0) * wd;
         ocean = mix(ocean, vec3(0.5) * (uSunE / PI * Ts * max(mu, 0.0) * sh + skyAmb), foam);
+        ocean = mix(ocean, vec3(0.24, 0.21, 0.15) * (uSunE / PI * Ts * max(mu, 0.0) * sh + skyAmb) + spec * 0.5, wet * wd * 0.8);
       }
       #endif
 

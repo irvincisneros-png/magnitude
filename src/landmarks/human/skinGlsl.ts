@@ -7,7 +7,7 @@
  * sweat pores, and larger veins and tendons. Each layer fades out once it is smaller than a
  * pixel, so there is no shimmer at any zoom.
  */
-import { FOLLICLE } from './figureSdf';
+import { FOLLICLE } from './pose';
 import { CELL_TILE_N, G_MAX, H_MIN, H_SPAN, PLAT_TILE_N, TEX_SIZE } from './skinTex';
 
 export const SKIN = /* glsl */ `

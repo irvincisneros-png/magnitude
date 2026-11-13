@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
 import { COMMON, type Shared } from './glsl';
 import { SKIN } from './skinGlsl';
-import { PALM } from './figureSdf';
+import { PALM } from './pose';
 import { acquireSkinTextures, releaseSkinTextures } from './skinTex';
 
 const ELL = /* glsl */ `
@@ -144,7 +144,7 @@ void main() {
 const TIER = {
   low: { rings: 80, segs: 80, hairStep: 3 },
   medium: { rings: 120, segs: 120, hairStep: 2 },
-  high: { rings: 170, segs: 168, hairStep: 1 },
+  high: { rings: 140, segs: 140, hairStep: 1 },
 };
 
 export class Skin {

@@ -6,9 +6,11 @@
 import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
 import { COMMON, type Shared } from './glsl';
-import { FEET_H } from './figureSdf';
+import { FEET_H } from './pose';
+import { MAP_O } from './glsl';
+import { sampleCover, type SiteData } from './siteData';
 import { heightH } from './terrain';
-import { fbm2, rawHeight, smoothstep, type Sample } from './terrainHeight';
+import { fbm2, smoothstep } from './terrainHeight';
 
 const vert = /* glsl */ `
 ${COMMON}
@@ -79,7 +81,7 @@ void main() {
   LOGZ_FRAG
 }`;
 
-const TIER = { low: { inner: 12000, outer: 6000 }, medium: { inner: 28000, outer: 14000 }, high: { inner: 30000, outer: 14000 } };
+const TIER = { low: { inner: 12000, outer: 6000 }, medium: { inner: 18000, outer: 8000 }, high: { inner: 20000, outer: 9000 } };
 
 export class Grass {
   readonly group = new THREE.Group();
@@ -88,7 +90,7 @@ export class Grass {
   private uShow = { value: 1 };
   private feet: Float32Array | null = null;
 
-  constructor(shared: Shared) {
+  constructor(shared: Shared, private D: SiteData) {
     this.mat = new THREE.ShaderMaterial({ vertexShader: vert, fragmentShader: frag, side: THREE.DoubleSide, uniforms: { ...shared, uShow: this.uShow, uFeetC: { value: new THREE.Vector3(FEET_H[0], 0, FEET_H[2]) } } });
   }
 
@@ -112,18 +114,20 @@ export class Grass {
     let seed = 4241;
     const rnd = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
     const cx = FEET_H[0], cz = FEET_H[2];
-    const s: Sample = { y: 0, e: 0, W: 0, esc: 0 };
+    const D = this.D;
     let k = 0;
     for (let n = 0; n < total * 3 && k < total; n++) {
       const r = 11 * Math.pow(rnd(), 0.72);
       const a = rnd() * Math.PI * 2;
       const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
-      rawHeight(x - FEET_H[0], z - FEET_H[2], s);
-      if (s.e < 17 + rnd() * 3) continue; // not over the cliff edge
+      // dune grass only off the sand: not on the beach-access track or the beach itself
+      const mx = x - MAP_O[0], mz = z - MAP_O[1];
+      const sand = sampleCover(D.cover, D.G.cover, 0, mx, mz) + 0.6 * sampleCover(D.cover2, D.G.cover, 1, mx, mz);
+      if (sand > 0.35 + 0.25 * rnd()) continue;
       if (this.feet && this.onShoe(x, z)) continue;
-      const y = heightH(x, z);
-      // patchy: tussocks taller near the cliff edge, shorter (grazed) further back
-      const tall = Math.exp(-((s.e - 15) ** 2) / 20);
+      const y = heightH(D, x, z);
+      // patchy: taller tussocks towards the sand's edge and the scrub, shorter where it is trampled
+      const tall = smoothstep(0.05, 0.3, sand) * 0.6 + sampleCover(D.cover, D.G.cover, 1, mx, mz) * 0.6;
       const tuft = 0.4 + 1.2 * fbm2(x / 1.4 + 3, z / 1.4, 3);
       const h = (0.05 + Math.pow(rnd(), 1.6) * 0.14) * (1 + tall * 1.4) * tuft * (1 - 0.6 * smoothstep(7, 11, r));
       P.set([x, y - 0.01, z], k * 3);
