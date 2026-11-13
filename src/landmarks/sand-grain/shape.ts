@@ -229,6 +229,9 @@ export function toHalf(val: number) {
 export interface Grid { n: number; B: number; d: Float32Array }
 export interface Baked {
   quartz: MeshData; feldspar: MeshData; heavy: MeshData;
+  /** A coarser quartz mesh (one icosphere level down: the same vertices, a quarter of the triangles)
+   *  used while the grain is small on screen; absent when `quartz` is already that coarse (low). */
+  quartzLo?: MeshData;
   grid: Uint16Array; map: Uint16Array; chips: Uint8Array;
   offsets: { quartz: number; feldspar: number; heavy: number; shell: number };
 }
@@ -288,6 +291,7 @@ function stain(x: number, y: number, z: number) {
 export function bake(sun: V3, quality: 'low' | 'medium' | 'high'): Baked {
   const qF = makeShape(QUARTZ), fF = makeShape(FELDSPAR), hF = makeShape(HEAVY);
   const quartz = meshShape(qF, quality === 'low' ? 5 : 6);
+  const quartzLo = quality === 'low' ? undefined : meshShape(qF, 5);
   const feldspar = meshShape(fF, quality === 'low' ? 4 : 5);
   const heavy = meshShape(hF, 4);
   const offsets = { quartz: -quartz.minY - SINK, feldspar: -feldspar.minY - SINK * 0.6, heavy: -heavy.minY - SINK * 0.4, shell: SHELL.th * 0.5 + (SHELL.R * SHELL.R) / (2 * SHELL.curve) + SHELL.tilt * SHELL.R * 0.6 - 0.03 };
@@ -449,7 +453,7 @@ export function bake(sun: V3, quality: 'low' | 'medium' | 'high'): Baked {
     map[i * 4 + 2] = toHalf(Math.min(40, blurred[i * 3 + 2]));
     map[i * 4 + 3] = toHalf(vis[i]);
   }
-  return { quartz, feldspar, heavy, grid, map, offsets, chips: bakeChips() };
+  return { quartz, quartzLo, feldspar, heavy, grid, map, offsets, chips: bakeChips() };
 }
 
 /** Tileable Voronoi "chips" texture: CHIP.period cells per axis, CHIP.res texels per axis.

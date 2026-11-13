@@ -14,6 +14,8 @@ export interface ActiveInfo {
   id: string;
   presence: number;
   opacity: number;
+  /** Resolution scale the layer was drawn at this frame (1 full, 0.5 half, 0 skipped). */
+  scale?: number;
   ready: boolean;
   zoom: number;
   meta?: LandmarkMeta;
@@ -111,7 +113,7 @@ export class Engine {
     });
 
     const ops = this.compositor.render(layers, time);
-    for (const info of infos) info.opacity = ops.get(info.id) ?? 0;
+    for (const info of infos) { info.opacity = ops.get(info.id) ?? 0; info.scale = this.compositor.scales.get(info.id); }
     return infos;
   }
 }

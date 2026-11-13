@@ -395,6 +395,7 @@ const factory: LandmarkFactory = () => {
   scene.add(haze);
 
   // ---- heliotail streamers
+  let tailPts: THREE.Points | null = null;
   const tailMat = track(new THREE.ShaderMaterial({
     vertexShader: tailVert, fragmentShader: bodyFrag, ...additive,
     uniforms: {
@@ -415,6 +416,7 @@ const factory: LandmarkFactory = () => {
     const pts = new THREE.Points(g, tailMat);
     pts.frustumCulled = false; pts.renderOrder = 3;
     scene.add(pts);
+    tailPts = pts;
   }
 
   // ---- heliosphere
@@ -592,6 +594,9 @@ const factory: LandmarkFactory = () => {
         u.uTime.value = simT; u.uDpr.value = dpr;
         const f = smooth(px(so.def.radiusAU), so.def.fadePx[0], so.def.fadePx[1]);
         u.uGain.value = so.def.gain * f * (so.def.name === 'dust' ? 1 - smooth(s, 11.9, 12.7) * 0.7 : 1) * (quality === 'low' ? 1.6 : 1);
+        // Zero gain draws exactly nothing, but zoomed out every particle still lands on the same few
+        // centre pixels as a blended sprite (~90k of them): skip the draw instead (perf, same image).
+        if (so.pts) so.pts.visible = u.uGain.value > 0;
       }
 
       // ---- Oort / Hills haze (fullscreen ray pass), heliotail
@@ -605,9 +610,13 @@ const factory: LandmarkFactory = () => {
       haze.visible = s > 13.2;
       tailMat.uniforms.uTime.value = frame.time; tailMat.uniforms.uDpr.value = dpr;
       tailMat.uniforms.uGain.value = 0.22 * smooth(px(120), 12, 40) * (1 - smooth(s, 15.4, 16.4));
+      if (tailPts) tailPts.visible = tailMat.uniforms.uGain.value > 0;
 
       // ---- heliosphere
       helioMat.uniforms.uA.value = smooth(px(120), 30, 110) * (1 - smooth(s, 15.4, 16.6));
+      helio.visible = helioMat.uniforms.uA.value > 0;
+      zodi.visible = zodiMat.uniforms.uA.value > 0;
+      disc.visible = discMat.uniforms.uA.value > 0;
 
       // ---- guides
       const eP = bodyPos[2], nP = bodyPos[7];

@@ -26,7 +26,7 @@ declare global {
       setOrbit(yaw: number, pitch: number): void;
       flyTo(s: number, seconds?: number): Promise<void>;
       setQuality(mode: QualityMode): void;
-      getActive(): { id: string; presence: number; opacity: number; ready: boolean; zoom: number }[];
+      getActive(): { id: string; presence: number; opacity: number; scale?: number; ready: boolean; zoom: number }[];
       getQuality(): { mode: QualityMode; tier: Quality };
       ready: Promise<void>;
     };
@@ -161,7 +161,7 @@ window.__magnitude = {
   setOrbit: (yaw, pitch) => { controller.yaw = yaw; controller.pitch = pitch; },
   flyTo: (s, seconds) => controller.flyTo(s, seconds),
   setQuality: (m) => engine.setQuality(m),
-  getActive: () => active.map(({ id, presence, opacity, ready, zoom }) => ({ id, presence, opacity, ready, zoom })),
+  getActive: () => active.map(({ id, presence, opacity, scale, ready, zoom }) => ({ id, presence, opacity, scale, ready, zoom })),
   getQuality: () => ({ mode: engine.quality.mode, tier: engine.tier }),
   ready: Promise.resolve(),
 };
@@ -190,7 +190,7 @@ function tick(now: number) {
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
     const info = engine.renderer.info.render;
     debugEl.textContent = `${fps.toFixed(0)} fps · ${engine.tier} (${engine.quality.mode}) · s ${s.toFixed(2)} · ${info.calls} calls · ${info.triangles} tris\n` +
-      active.map((a) => `${a.id.padEnd(13)} p ${a.presence.toFixed(2)} op ${a.opacity.toFixed(2)} z ${a.zoom.toFixed(2)}${a.ready ? '' : ' (loading)'}`).join('\n');
+      active.map((a) => `${a.id.padEnd(13)} p ${a.presence.toFixed(2)} op ${a.opacity.toFixed(2)} z ${a.zoom.toFixed(2)}${a.scale !== undefined && a.scale !== 1 ? ` res ${a.scale}` : ''}${a.ready ? '' : ' (loading)'}`).join('\n');
   }
 }
 

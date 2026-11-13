@@ -75,6 +75,7 @@ function createSandGrain(): Landmark {
   const mats: THREE.Material[] = [];
   const texs: THREE.Texture[] = [];
   let quartz: THREE.Mesh | null = null;
+  let qGeoHi: THREE.BufferGeometry | null = null, qGeoLo: THREE.BufferGeometry | null = null;
   let specks: Specks | null = null;
   let tier: Quality = 'high';
   let renderer: THREE.WebGLRenderer | null = null;
@@ -116,6 +117,8 @@ function createSandGrain(): Landmark {
       quartz = new THREE.Mesh(qGeo, qMat);
       quartz.position.set(QUARTZ_AT.x, b.offsets.quartz, QUARTZ_AT.z);
       geos.push(qGeo); mats.push(qMat);
+      qGeoHi = qGeo;
+      if (b.quartzLo) { qGeoLo = meshFrom(b.quartzLo); geos.push(qGeoLo); }
 
       const place = (g: THREE.BufferGeometry, kind: 0 | 1 | 2, at: { x: number; z: number; yaw: number }, y: number) => {
         const m = solidMaterial(shared, kind);
@@ -148,6 +151,12 @@ function createSandGrain(): Landmark {
       const cam = frame.camera;
       env.uTime.value = frame.time;
       env.uZoom.value = frame.zoom;
+      // once the grain is under ~half the view height its fine mesh is mostly sub-pixel triangles
+      // (overshading); the coarse level has the same vertices and a sub-pixel silhouette error there
+      if (quartz && qGeoLo && qGeoHi) {
+        if (frame.zoom > 0.45 && quartz.geometry !== qGeoLo) quartz.geometry = qGeoLo;
+        else if (frame.zoom < 0.4 && quartz.geometry !== qGeoHi) quartz.geometry = qGeoHi;
+      }
       if (renderer) renderer.getDrawingBufferSize(buf);
       env.uPx.value = (2 * Math.tan((cam.fov * Math.PI) / 360)) / Math.max(buf.y || 800, 1);
     },

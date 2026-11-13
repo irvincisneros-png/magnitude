@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
 import type { AntData, PartMesh } from './build';
 import { HAIR_STRIDE } from './build';
+import { SUN_DIR } from './light';
 import { cuticleFrag, cuticleVert, decalFrag, decalVert, hairFrag, hairVert, MAX_CAPS } from './glsl';
 import {
   ANKLE_H, FUNI_DIR, FUNI_L, GASTER_J, HEAD_PITCH, HINGE, LEGS, MAND_OPEN, MAND_PITCH, NECK, SCAPE_DIR, SCAPE_L, SOCKET,
@@ -94,12 +95,45 @@ export class AntRig {
   }
 
   private cutMat(defines: Record<string, string>, bend?: { value: THREE.Vector2 }) {
+    // rigid parts trace only the capsules that can reach them (see listCaps); bent antennae use all
+    const list: Record<string, THREE.IUniform> = bend ? {} : { uCapList: { value: new Float32Array(MAX_CAPS) }, uCapCnt: { value: 0 } };
     const m = new THREE.ShaderMaterial({
-      vertexShader: cuticleVert, fragmentShader: cuticleFrag, defines,
-      uniforms: { ...this.shared, uShadowN: this.uShadowN, ...(bend ? { uBend: bend } : {}) },
+      vertexShader: cuticleVert, fragmentShader: cuticleFrag, defines: bend ? defines : { ...defines, CAPLIST: '' },
+      uniforms: { ...this.shared, uShadowN: this.uShadowN, ...list, ...(bend ? { uBend: bend } : {}) },
     });
     this.mats.push(m);
     return m;
+  }
+
+  /**
+   * Per draw: the capsules (of the first uShadowN) whose shadow can fall anywhere on this mesh.
+   * Conservative over the mesh's world bounding sphere (s, R): the sun ray from any point within it
+   * passes the capsule's bounding sphere by more than capOcc's widest penumbra, so skipping it changes
+   * nothing. Same test as the per-capsule early-out in antShadow, widened by R (it is 1-Lipschitz).
+   */
+  private listCaps(mesh: THREE.Mesh, mat: THREE.ShaderMaterial) {
+    const gs = mesh.geometry.boundingSphere;
+    const u = mat.uniforms;
+    const list = u.uCapList.value as Float32Array;
+    const caps = this.shared.uCaps.value;
+    const n = Math.min(this.uShadowN.value, MAX_CAPS);
+    let cnt = 0;
+    if (!gs) { for (let j = 0; j < n; j++) list[cnt++] = j; u.uCapCnt.value = cnt; mat.uniformsNeedUpdate = true; return; }
+    const sc = tmpS.copy(gs.center).applyMatrix4(mesh.matrixWorld);
+    const R = gs.radius * mesh.matrixWorld.getMaxScaleOnAxis() + 0.0015 + 1e-4;
+    const sun = SUN_W;
+    for (let j = 0; j < n; j++) {
+      const A = caps[j * 2], B = caps[j * 2 + 1];
+      const cx = (A.x + B.x) * 0.5 - sc.x, cy = (A.y + B.y) * 0.5 - sc.y, cz = (A.z + B.z) * 0.5 - sc.z;
+      const hl = 0.5 * Math.hypot(B.x - A.x, B.y - A.y, B.z - A.z);
+      const tc = cx * sun.x + cy * sun.y + cz * sun.z;
+      const t0 = Math.max(tc, 0);
+      const D = Math.hypot(cx - sun.x * t0, cy - sun.y * t0, cz - sun.z * t0);
+      const m = 0.0009 + (Math.max(tc + R, 0) + hl) * 0.02 + hl + A.w;
+      if (D - R < m) list[cnt++] = j;
+    }
+    u.uCapCnt.value = cnt;
+    mat.uniformsNeedUpdate = true;
   }
   private hairMat(bend?: { value: THREE.Vector2 }) {
     const m = new THREE.ShaderMaterial({
@@ -196,6 +230,7 @@ export class AntRig {
       joint.add(inner);
       parent.add(joint);
       const mesh = new THREE.Mesh(geo(part), mat);
+      if (mat.uniforms.uCapList) mesh.onBeforeRender = () => this.listCaps(mesh, mat);
       inner.add(mesh);
       const n: Node = { joint, inner, hairSrc: byName.get(part)!.hairs, hairMat: hm };
       this.nodes.set(key, n);
@@ -391,4 +426,5 @@ export class AntRig {
 }
 const aM1 = new THREE.Matrix4(), aM2 = new THREE.Matrix4();
 const tmpM = new THREE.Matrix4(), tmpE = new THREE.Euler();
-const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
+const SUN_W = new THREE.Vector3(...SUN_DIR).normalize();
+const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3(), tmpS = new THREE.Vector3();

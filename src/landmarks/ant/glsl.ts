@@ -60,10 +60,44 @@ float antShadow(vec3 p, float n) {
   for (int i = 0; i < MAX_CAPS; i++) {
     if (float(i) >= n) break;
     vec4 A = uCaps[i * 2], B = uCaps[i * 2 + 1];
+    // exact early-out: if the sun ray clears the capsule's bounding sphere by more than the widest
+    // penumbra capOcc could use for it, capOcc would return exactly 1 (perf, no visual change)
+    vec3 c = (A.xyz + B.xyz) * 0.5;
+    float hl = length(B.xyz - A.xyz) * 0.5;
+    float tc = max(dot(c - p, uSun), 0.0);
+    vec3 dc = c - p - uSun * tc;
+    float m = 0.0009 + (tc + hl) * 0.02 + hl + A.w;
+    if (dot(dc, dc) >= m * m) continue;
     s = min(s, capOcc(p, uSun, A.xyz, B.xyz, A.w));
   }
   return s;
 }
+#ifdef CAPLIST
+/** antShadow restricted to the capsules that can shade this mesh at all (list built on the CPU each
+ *  frame from the mesh's bounding sphere, conservatively): same result, far fewer iterations. */
+uniform float uCapList[MAX_CAPS];
+uniform float uCapCnt;
+float antShadowL(vec3 p) {
+  vec3 oc = p - uBound.xyz;
+  float b = dot(oc, uSun);
+  float cc = dot(oc, oc) - uBound.w * uBound.w;
+  if ((b > 0.0 && cc > 0.0) || b * b - cc < 0.0) return 1.0;
+  float s = 1.0;
+  for (int i = 0; i < MAX_CAPS; i++) {
+    if (float(i) >= uCapCnt) break;
+    int j = int(uCapList[i] + 0.5);
+    vec4 A = uCaps[j * 2], B = uCaps[j * 2 + 1];
+    vec3 c = (A.xyz + B.xyz) * 0.5;
+    float hl = length(B.xyz - A.xyz) * 0.5;
+    float tc = max(dot(c - p, uSun), 0.0);
+    vec3 dc = c - p - uSun * tc;
+    float m = 0.0009 + (tc + hl) * 0.02 + hl + A.w;
+    if (dot(dc, dc) >= m * m) continue;
+    s = min(s, capOcc(p, uSun, A.xyz, B.xyz, A.w));
+  }
+  return s;
+}
+#endif
 float ggxD(float nh, float a) { float a2 = a * a; float d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
 `;
 
@@ -228,7 +262,11 @@ void main() {
   #endif
 
   // ---- light
+  #ifdef CAPLIST
+  float sh = antShadowL(P + N * 0.0015);
+  #else
   float sh = antShadow(P + N * 0.0015, uShadowN);
+  #endif
   vec3 L = uSun;
   float ndl = dot(N, L);
   float nv = max(dot(N, V), 0.02);

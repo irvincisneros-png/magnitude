@@ -145,7 +145,7 @@ function createSun(): Landmark {
   body.add(photo);
 
   // ---- prominences on the body (they rotate with the star)
-  const promUniforms = { uTime: { value: 0 }, uPx: { value: 800 }, uCenter: { value: new THREE.Vector3() }, uGain: { value: 1 } };
+  const promUniforms = { uTime: { value: 0 }, uPx: { value: 800 }, uCenter: { value: new THREE.Vector3() }, uGain: { value: 1 }, uKeep: { value: 1 } };
   const promMat = track(new THREE.ShaderMaterial({
     vertexShader: promVert, fragmentShader: promFrag, uniforms: promUniforms,
     transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
@@ -338,6 +338,11 @@ function createSun(): Landmark {
       glare.scale.setScalar(cam.position.distanceTo(C) * 0.5);
       glareMat.uniforms.uGlare.value = THREE.MathUtils.smoothstep(z, 0.7, 1.9);
       promUniforms.uGain.value = 1.0 * (1 - THREE.MathUtils.smoothstep(z, 1.2, 2.2));
+      // thin the prominence particles once the disc is under ~1/10 of the view height (see promVert)
+      // (low already draws 40 % of the particles: left as it is)
+      promUniforms.uKeep.value = frame.quality === 'low' ? 1 : 1 - 0.7 * THREE.MathUtils.smoothstep(z, 1.0, 1.5);
+      if (bodyProm) bodyProm.visible = promUniforms.uGain.value > 0.002;
+      if (heroProm) heroProm.visible = promUniforms.uGain.value > 0.002;
 
       // Bead strip: across the apparent diameter, through the disc centre.
       const sil = dc / Math.sqrt(Math.max(1e-6, dc * dc - R * R));

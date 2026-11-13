@@ -203,9 +203,13 @@ export const coronaFrag = /* glsl */ `
 
 export const promVert = /* glsl */ `
   attribute vec3 aA; attribute vec3 aB; attribute vec4 aP; attribute vec4 aQ;
-  uniform float uTime; uniform float uPx; uniform vec3 uCenter;
+  uniform float uTime; uniform float uPx; uniform vec3 uCenter; uniform float uKeep;
   varying float vA; varying vec3 vCol;
   void main() {
+    // while the Sun is small on screen only a random subset of the threads' particles is drawn,
+    // brighter (same law as the tier count scale): thousands of tiny blended sprites piling onto
+    // the few pixels of the limb cost a lot and add nothing a sparser set cannot show
+    if (aP.w >= uKeep) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; vA = 0.0; vCol = vec3(0.0); return; }
     float t = fract(aP.x + uTime * aQ.y);
     vec3 dir = normalize(mix(aA, aB, t));
     vec3 tang = normalize(aB - aA);
@@ -225,7 +229,7 @@ export const promVert = /* glsl */ `
     gl_Position = projectionMatrix * mv;
 
     float px = aQ.z * uPx / max(-mv.z, 1e-5);
-    float a = aQ.w * smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t);
+    float a = aQ.w * smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t) / pow(uKeep, 0.8);
     float knot = smoothstep(0.45, 0.95, 0.5 + 0.5 * sin(t * 19.0 + aP.y * 5.0 + sin(t * 7.0 + uTime * 0.2) * 2.0));
     a *= 0.4 + 1.2 * knot;   // dense knots of plasma along each thread
     // Seen against the bright disc a prominence is a dim 'filament'; above the limb it glows.
