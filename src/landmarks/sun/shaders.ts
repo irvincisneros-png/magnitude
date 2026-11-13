@@ -82,13 +82,19 @@ export const photoFrag = /* glsl */ `
     vec3 p = n * 0.5;
     float fp = length(fwidth(p));
 
-    // Convection at three real sizes: supergranules (~30 000 km), mesogranules, granules (~1000 km).
-    float lS, lM, lG;
+    // Convection: supergranule-scale mottling (~30 000 km), mesogranules (~3000 km), granules (~1000 km).
+    // Large scales are soft, edge-free turbulence (no 'cracked tiles'); only the small cells get lanes.
+    float lS = 0.0, lM, lG;
     float g = 1.0;
-    g *= granScale(p + 3.1, 46.0, uTime * 0.05, fp, 0.4, 1.1, 0.09, lS);
-    g *= granScale(p + 7.7, 220.0, uTime * 0.12, fp, 0.3, 0.6, 0.12, lM);
+    float big = fbm3(p * 38.0 + vec3(0.0, uTime * 0.004, 0.0));
+    float mid = vnoise(p * 140.0 + vec3(uTime * 0.01, 0.0, 0.0));
+    float fadeMid = 1.0 - smoothstep(0.25, 0.5, fp * 140.0);
+    g *= 0.9 + 0.2 * big;
+    g *= mix(1.0, 0.88 + 0.24 * mid, fadeMid);
+    lS = smoothstep(0.55, 0.75, big);                        // brighter network for faculae
+    g *= granScale(p + 7.7, 330.0, uTime * 0.15, fp, 0.75, 0.3, 0.32, lM);
     #ifdef HIGH
-    g *= granScale(p, 1400.0, uTime * 0.35, fp, 0.9, 0.16, 0.42, lG);
+    g *= granScale(p, 1400.0, uTime * 0.35, fp, 1.0, 0.16, 0.45, lG);
     #endif
 
     // Sunspots: dark umbra, filamentary penumbra; activity drives faculae around them.
@@ -122,14 +128,13 @@ export const photoFrag = /* glsl */ `
     // Wavelength-dependent limb darkening: white-yellow centre, deep orange limb.
     float x = 1.0 - mu;
     vec3 limb = max(1.0 - vec3(0.55, 0.70, 0.85) * x - vec3(0.25, 0.22, 0.12) * x * x, 0.0);
-    vec3 base = vec3(1.0, 0.58, 0.25);
+    vec3 base = vec3(1.0, 0.56, 0.19);
 
     // Faculae: bright magnetic network near active regions, strongest towards the limb.
     float net = max(lS, lM * 0.6);
     float fac = act * (0.25 + 0.75 * net) * (0.15 + pow(x, 1.4)) * 0.55;
     float plage = act * 0.06 * fbm3(n * 30.0);
 
-    g *= 0.9 + 0.2 * fbm3(p * 90.0 + vec3(0.0, uTime * 0.01, 0.0));
     vec3 col = base * limb * g * spot;
     col *= mix(vec3(1.0), vec3(1.0, 0.62, 0.42), umbra);   // umbra is cooler, redder
     col += base * limb * (fac + plage);
@@ -166,21 +171,23 @@ export const coronaFrag = /* glsl */ `
     float lat = dir.y;
     float lb = log(b);
 
-    // K-corona: steep falloff, structured into streamers (equator) and plumes (poles).
-    float r3 = pow(b, -3.6);
-    float sm = vnoise(dir * 2.6 + vec3(0.0, 0.0, uTime * 0.004));
-    float md = vnoise(dir * 9.0 + vec3(uTime * 0.006, 3.0, 0.0));
-    float fn = vnoise(dir * 34.0 + vec3(0.0, 7.0, 0.0));
-    float rays = 0.66 * sm + 0.2 * md + 0.14 * mix(0.5, fn, uDetail);
-    float eq = exp(-lat * lat * b / 0.08);                 // helmet streamers taper outwards
-    float helmet = eq * smoothstep(0.38, 0.75, sm) * (1.0 + 1.6 * smoothstep(1.2, 3.0, b));
-    float plumes = smoothstep(0.6, 0.95, abs(lat)) * smoothstep(0.45, 0.9, vnoise(dir * 70.0)) * 0.45;
-    float flow = 0.93 + 0.07 * sin(lb * 14.0 - uTime * 0.35 + md * 7.0);   // blobs streaming outwards
-    float structure = (0.3 + 0.7 * rays + 1.1 * helmet + plumes) * flow;
-    float corona = r3 * structure * (1.0 - smoothstep(4.0, 5.8, b));
-    float fine = md;
-    float inner = exp(-(b - 1.0) * 9.0) * (0.6 + 0.6 * fine);   // bright inner corona glow
-    vec3 cc = vec3(1.0, 0.9, 0.8) * corona * 0.26 + vec3(1.0, 0.7, 0.45) * inner * 0.22;
+    // K-corona like an eclipse photograph: a smooth steep inner glow plus a long soft outer
+    // falloff, shaped by broad helmet streamers (equator) and long faint rays. Fine angular detail
+    // only modulates brightness gently, so rays stay long and silky instead of furry.
+    float sm = vnoise(dir * 2.2 + vec3(0.0, 0.0, uTime * 0.003));
+    float sm2 = vnoise(dir * 4.5 + vec3(5.0, 0.0, uTime * 0.004));
+    float r1 = vnoise(dir * 11.0 + vec3(0.0, 3.0, uTime * 0.005));
+    float r2 = vnoise(dir * 27.0 + vec3(7.0, 0.0, 0.0));
+    float r3n = vnoise(dir * 63.0 + vec3(0.0, 11.0, 0.0));
+    float rays = 1.0 + 0.32 * (r1 - 0.5) + 0.22 * (r2 - 0.5) * uDetail + 0.14 * (r3n - 0.5) * uDetail;
+    float eq = exp(-lat * lat * b / 0.07);                  // streamers narrow into cusps outwards
+    float helmet = eq * smoothstep(0.3, 0.8, 0.6 * sm + 0.4 * sm2);
+    float polar = smoothstep(0.55, 0.95, abs(lat)) * 0.25;  // polar plumes: fainter, finer
+    float outer = pow(b, -2.3) * (0.25 + 1.5 * helmet + polar + 0.35 * sm2);
+    float innerK = pow(b, -7.0) * (0.75 + 0.5 * sm);
+    float corona = (0.55 * innerK + 0.45 * outer) * rays * (1.0 - smoothstep(3.4, 5.8, b));
+    float inner = exp(-(b - 1.0) * 14.0) * (0.75 + 0.5 * r1);   // bright low corona hugging the limb
+    vec3 cc = vec3(1.0, 0.9, 0.8) * corona * 0.3 + vec3(1.0, 0.72, 0.46) * inner * 0.16;
 
     // Chromosphere: a thin pink-red (hydrogen-alpha) rim of spicules just above the limb.
     float h = (b - 1.0) * 0.5 * 1.39e6;         // height above the limb in km
@@ -206,7 +213,8 @@ export const promVert = /* glsl */ `
     float arch = sin(3.14159265 * t);
     float h = aQ.x * pow(max(arch, 0.0), 0.8);
     float tw = aP.y + t * 7.0 + uTime * 0.05;
-    float rad = aP.z * (0.35 + 0.9 * arch) * sqrt(fract(aP.w * 13.7 + 0.31));   // fill the flux rope, not just its skin
+    // each strand is a thin thread at its own depth inside the flux rope (fills the rope, not just its skin)
+    float rad = aP.z * (0.35 + 0.9 * arch) * sqrt(fract(aP.y * 3.17 + 0.13)) * (0.94 + 0.12 * fract(aP.w * 13.7));
     vec3 off = (side * cos(tw) + dir * sin(tw)) * rad;
     off += side * sin(t * 11.0 + uTime * 0.25 + aP.w * 6.28) * aQ.x * 0.06 * arch;
     off += dir * sin(t * 17.0 - uTime * 0.4 + aP.w * 3.1) * aQ.x * 0.03 * arch;
@@ -218,18 +226,24 @@ export const promVert = /* glsl */ `
 
     float px = aQ.z * uPx / max(-mv.z, 1e-5);
     float a = aQ.w * smoothstep(0.0, 0.08, t) * smoothstep(1.0, 0.92, t);
-    a *= 0.35 + 1.3 * smoothstep(0.35, 0.95, 0.5 + 0.5 * sin(t * 23.0 + aP.w * 40.0 + sin(t * 7.0 + uTime * 0.2) * 2.0));   // knots
+    float knot = smoothstep(0.45, 0.95, 0.5 + 0.5 * sin(t * 19.0 + aP.y * 5.0 + sin(t * 7.0 + uTime * 0.2) * 2.0));
+    a *= 0.4 + 1.2 * knot;   // dense knots of plasma along each thread
     // Seen against the bright disc a prominence is a dim 'filament'; above the limb it glows.
     vec3 rd = normalize(wp.xyz - cameraPosition);
     vec3 oc = uCenter - cameraPosition;
     float tc = dot(oc, rd);
     float bb = length(oc - rd * tc);
-    if (bb < 0.5) a *= 0.05;
+    float onDisc = step(bb, 0.5);
     if (px < 1.5) { a *= px * px / 2.25; px = 1.5; }
     gl_PointSize = min(px, 64.0);
     vA = a;
-    float hot = smoothstep(0.25, 0.0, arch) ;
-    vCol = mix(vec3(1.0, 0.13, 0.07), vec3(1.0, 0.36, 0.12), hot * 0.6 + 0.3 * fract(aP.w * 7.3));
+    // H-alpha red plasma; only dense knots run hotter and brighter. Peak kept low so bloom and
+    // tone mapping do not bleach it to white.
+    vec3 red = vec3(1.25, 0.16, 0.06) * (0.8 + 0.4 * fract(aP.w * 7.3));
+    vCol = mix(red, vec3(2.0, 0.55, 0.14), knot * 0.55);
+    // Seen against the bright disc a prominence is a dark, reddish 'filament'.
+    vCol = mix(vCol, vec3(0.35, 0.09, 0.02), onDisc);
+    vA *= mix(1.0, 0.16, onDisc);
   }`;
 
 export const promFrag = /* glsl */ `
@@ -240,7 +254,8 @@ export const promFrag = /* glsl */ `
     float r2 = dot(q, q);
     if (r2 > 1.0) discard;
     float k = exp(-r2 * 4.0);
-    gl_FragColor = vec4(vCol * k * vA * uGain, 0.0);
+    float a = clamp(k * vA * uGain, 0.0, 1.0);
+    gl_FragColor = vec4(vCol * a, a);   // premultiplied 'over': overlaps converge to red, not white
   }`;
 
 // ------------------------------------------------------------------ Earth proxy

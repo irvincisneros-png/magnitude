@@ -82,8 +82,8 @@ function buildLoops(loops: Loop[], scale: number, rand: () => number): THREE.Buf
       Q.set([
         l.height * (0.82 + 0.3 * sr),
         (0.004 + 0.01 * rand()) * (rand() < 0.5 ? 1 : -1),
-        (glow ? 4.0 : 1.0) * l.thick * (0.6 + rand()) * 2.4,
-        l.bright * (glow ? 0.05 : 0.12 + 0.12 * rand()) / Math.sqrt(scale),
+        glow ? l.thick * 2.2 : 0.0022 * (0.6 + rand()) * (l.thick / 0.004),
+        l.bright * (glow ? 0.035 : 0.16 + 0.14 * rand()) / Math.pow(scale, 0.8),
       ], k * 4);
       k++;
     }
@@ -146,7 +146,12 @@ function createSun(): Landmark {
 
   // ---- prominences on the body (they rotate with the star)
   const promUniforms = { uTime: { value: 0 }, uPx: { value: 800 }, uCenter: { value: new THREE.Vector3() }, uGain: { value: 1 } };
-  const promMat = track(new THREE.ShaderMaterial({ vertexShader: promVert, fragmentShader: promFrag, uniforms: promUniforms, ...additive }));
+  const promMat = track(new THREE.ShaderMaterial({
+    vertexShader: promVert, fragmentShader: promFrag, uniforms: promUniforms,
+    transparent: true, depthWrite: false, blending: THREE.CustomBlending, blendEquation: THREE.AddEquation,
+    blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
+    blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+  }));
   const bodyLoops: Loop[] = [];
   {
     const r = rng(77);
@@ -180,7 +185,7 @@ function createSun(): Landmark {
 
   // ---- hero prominence, kept on the limb beside Earth (camera-anchored frame)
   const heroLoops: Loop[] = [
-    { a: new THREE.Vector3(-0.075, 1, -0.02).normalize(), b: new THREE.Vector3(0.06, 1, 0.03).normalize(), height: 0.07, strands: 18, per: 900, thick: 0.0065, bright: 0.95 },
+    { a: new THREE.Vector3(-0.075, 1, -0.02).normalize(), b: new THREE.Vector3(0.06, 1, 0.03).normalize(), height: 0.07, strands: 30, per: 560, thick: 0.0065, bright: 1.0 },
     { a: new THREE.Vector3(-0.03, 1, -0.04).normalize(), b: new THREE.Vector3(0.1, 1, -0.01).normalize(), height: 0.045, strands: 8, per: 700, thick: 0.003, bright: 1.0 },
     { a: new THREE.Vector3(0.09, 1, 0.0).normalize(), b: new THREE.Vector3(0.15, 1, 0.02).normalize(), height: 0.022, strands: 4, per: 400, thick: 0.002, bright: 0.9 },
   ];
@@ -332,7 +337,7 @@ function createSun(): Landmark {
       glare.quaternion.copy(cam.quaternion);
       glare.scale.setScalar(cam.position.distanceTo(C) * 0.5);
       glareMat.uniforms.uGlare.value = THREE.MathUtils.smoothstep(z, 0.7, 1.9);
-      promUniforms.uGain.value = 0.14 * (1 - THREE.MathUtils.smoothstep(z, 1.2, 2.2));
+      promUniforms.uGain.value = 1.0 * (1 - THREE.MathUtils.smoothstep(z, 1.2, 2.2));
 
       // Bead strip: across the apparent diameter, through the disc centre.
       const sil = dc / Math.sqrt(Math.max(1e-6, dc * dc - R * R));
