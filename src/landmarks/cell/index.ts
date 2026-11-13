@@ -22,9 +22,11 @@ const meta: LandmarkMeta = {
   id: 'cell',
   name: 'Human skin cell',
   sizeMeters: 3e-5,
-  range: [-7.3, -3.3],
+  range: [-5.3, -3.3],
   evidence: 'measured',
-  nesting: 'true',
+  nesting: 'comparison',
+  nestingNote:
+    'The bacterium at the centre is here only to compare sizes: it is about 15 times smaller than this cell. Real E. coli live in your gut, outside your cells. What this nucleus really holds is your own DNA.',
   blurb:
     'A keratinocyte, the main cell of the outer layer of your skin, is about 30 micrometres across. It is packed with organelles, tough keratin fibres and a nucleus that holds about 2 metres of DNA wound onto protein spools.',
   howWeKnow: {

@@ -7,9 +7,9 @@ const EPS = 1e-9;
 const inDesert = (lo: number, hi: number) => DESERTS.some((d) => d.range[0] <= lo + EPS && d.range[1] >= hi - EPS);
 
 describe('manifest', () => {
-  it('has 12 landmarks with unique ids in ascending size order', () => {
-    expect(MANIFEST).toHaveLength(12);
-    expect(new Set(MANIFEST.map((r) => r.id)).size).toBe(12);
+  it('has 20 landmarks with unique ids in ascending size order', () => {
+    expect(MANIFEST).toHaveLength(20);
+    expect(new Set(MANIFEST.map((r) => r.id)).size).toBe(20);
     for (let i = 1; i < MANIFEST.length; i++) {
       expect(MANIFEST[i].sizeMeters).toBeGreaterThan(MANIFEST[i - 1].sizeMeters);
       expect(MANIFEST[i].range[0]).toBeGreaterThan(MANIFEST[i - 1].range[0]);
@@ -56,8 +56,8 @@ describe('registry window', () => {
     expect(MANIFEST[a].id).toBe('human');
     expect(b).toBe(a);
     const { keep, retain } = windowFor(s, MANIFEST);
-    expect(keep.map((i) => MANIFEST[i].id)).toEqual(['cell', 'human', 'earth']);
-    expect(retain.map((i) => MANIFEST[i].id)).toEqual(['dna', 'cell', 'human', 'earth', 'sun']);
+    expect(keep.map((i) => MANIFEST[i].id)).toEqual(['ant', 'human', 'earth']);
+    expect(retain.map((i) => MANIFEST[i].id)).toEqual(['sand-grain', 'ant', 'human', 'earth', 'earth-moon']);
   });
 
   it('inside the desert, focuses the landmarks either side of the gap', () => {

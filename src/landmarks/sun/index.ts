@@ -24,7 +24,7 @@ const meta: LandmarkMeta = {
   id: 'sun',
   name: 'Sun',
   sizeMeters: 1.39e9,
-  range: [8.6, 11.5],
+  range: [8.95, 11.5],
   evidence: 'measured',
   nesting: 'comparison',
   nestingNote:

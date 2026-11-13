@@ -219,9 +219,9 @@ describe('StampStore', () => {
 
 describe('missions.json', () => {
   const list = missions as Mission[];
-  it('has 8 missions with a mix of types and unique ids', () => {
-    expect(list).toHaveLength(8);
-    expect(new Set(list.map((m) => m.id)).size).toBe(8);
+  it('has 12 missions with a mix of types and unique ids', () => {
+    expect(list).toHaveLength(12);
+    expect(new Set(list.map((m) => m.id)).size).toBe(12);
     expect(new Set(list.map((m) => m.type))).toEqual(new Set(['find', 'compare', 'estimate']));
   });
   it('validates the schema', () => {
@@ -272,12 +272,12 @@ describe('tours.json', () => {
       }
     }
   });
-  it('whole journey runs Planck to universe in about 90 s', () => {
+  it('whole journey runs Planck to universe in about two and a half minutes', () => {
     const t = list[0];
     expect(t.steps[0].s).toBeLessThan(-34);
     expect(t.steps[t.steps.length - 1].s).toBeGreaterThan(26);
-    expect(tourSeconds(t)).toBeGreaterThanOrEqual(80);
-    expect(tourSeconds(t)).toBeLessThanOrEqual(100);
+    expect(tourSeconds(t)).toBeGreaterThanOrEqual(130);
+    expect(tourSeconds(t)).toBeLessThanOrEqual(160);
   });
   it('inside-you goes human to quark and our-place goes human to universe', () => {
     const inside = list[1];

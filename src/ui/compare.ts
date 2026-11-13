@@ -1,5 +1,5 @@
 /**
- * Compare tray: pick any two objects (the 12 landmarks + every ruler marker), see them at true relative scale
+ * Compare tray: pick any two objects (every landmark + every ruler marker), see them at true relative scale
  * and read the ratio in words. When the ratio is huge, a zoom control grows the small one out of a dot.
  */
 import { formatFriendly, superscript } from '../engine/scale';

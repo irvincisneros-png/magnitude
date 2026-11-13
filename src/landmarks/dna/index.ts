@@ -320,9 +320,11 @@ const factory: LandmarkFactory = () => {
       ghostMat.uniforms.uInten.value = 0.11 * (0.05 + 0.95 * smooth(-0.9, -0.25, zoom));
 
       // zoom-out: atoms (sub-pixel) give way to the striped fibre
-      atomUniforms.uSolidA.value = 1 - smooth(1.5, 2.15, zoom);
+      atomUniforms.uSolidA.value = 1 - smooth(1.25, 1.7, zoom);
       if (atomUniforms.uSolidA.value < 0.003) solid.visible = false;
-      tubeUniforms.uAlpha.value = smooth(1.35, 2.0, zoom);
+      tubeUniforms.uAlpha.value = smooth(1.2, 1.6, zoom);
+      // inside the phage head (the parent scene) only a short length of this strand should show
+      tubeUniforms.uHalf.value = FIBRE_HALF + (Math.min(FIBRE_HALF, 16) - FIBRE_HALF) * smooth(1.15, 1.6, zoom);
       tube.visible = tubeUniforms.uAlpha.value > 0.003;
       tubeUniforms.uBright.value = 0.8 + 0.9 * smooth(1.6, 2.4, zoom);
 
@@ -332,8 +334,8 @@ const factory: LandmarkFactory = () => {
       moteUniforms.uInten.value = 0.55 * (1 - smooth(1.0, 2.0, zoom));
       motes.visible = moteUniforms.uInten.value > 0.004;
 
-      // the nucleoplasm backdrop yields to the cell behind us as we zoom out
-      backMat.uniforms.uAlpha.value = 1 - smooth(1.3, 2.2, zoom);
+      // the watery backdrop yields to the phage head (the parent scene) around us as we zoom out
+      backMat.uniforms.uAlpha.value = 1 - smooth(0.9, 1.5, zoom);
       back.visible = backMat.uniforms.uAlpha.value > 0.003;
     },
     setQuality(q: Quality) { applyQuality(q); },

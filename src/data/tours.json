@@ -2,7 +2,7 @@
   {
     "id": "whole-journey",
     "title": "The whole journey",
-    "summary": "From the Planck length to the edge of the observable universe in about 90 seconds.",
+    "summary": "From the Planck length to the edge of the observable universe in about two and a half minutes.",
     "steps": [
       {
         "s": -34.5,
@@ -37,10 +37,38 @@
         "caption": "DNA is only about 2 nanometres wide. Its twisted ladder of paired bases holds the instructions for building you."
       },
       {
+        "s": -6.45,
+        "yaw": 0.5,
+        "pitch": 0.15,
+        "seconds": 7,
+        "caption": "A virus: bacteriophage T4, about 200 nanometres tall. Its head is packed with DNA, and it lands on bacteria like a tiny spacecraft."
+      },
+      {
+        "s": -5.45,
+        "yaw": 0.2,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "The bacterium it infects, E. coli, is about 2 micrometres long. It is a whole living thing made of just one cell, with no nucleus."
+      },
+      {
         "s": -4.3,
         "yaw": 0.5,
         "seconds": 7,
         "caption": "A human skin cell, about 30 micrometres across. You are made of tens of trillions of cells like this one."
+      },
+      {
+        "s": -3.05,
+        "yaw": 0.7,
+        "pitch": 0.45,
+        "seconds": 6,
+        "caption": "A grain of beach sand, half a millimetre across, stuck to the back of a hand. It is a worn crystal of quartz."
+      },
+      {
+        "s": -2.15,
+        "yaw": 0.9,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "A black garden ant, about 4 millimetres long. Six legs and three body parts make it an insect."
       },
       {
         "s": 0.5,
@@ -56,10 +84,24 @@
         "caption": "Earth is about 12,700 kilometres across. Every person who has ever lived has lived on this one small world."
       },
       {
-        "s": 9.4,
+        "s": 8.95,
+        "yaw": 0.3,
+        "pitch": 0.5,
+        "seconds": 8,
+        "caption": "The Moon orbits about 384,000 kilometres away. Thirty Earths would fit in the gap, and light takes 1.3 seconds to cross it."
+      },
+      {
+        "s": 9.5,
         "yaw": 0.2,
         "seconds": 6,
         "caption": "The Sun is about 109 Earths wide. Its light takes about eight minutes to reach us."
+      },
+      {
+        "s": 12.28,
+        "yaw": -0.2,
+        "pitch": 0.25,
+        "seconds": 8,
+        "caption": "Betelgeuse, a red supergiant about 770 Suns wide, shown where the Sun would be. It would swallow every planet out to Mars."
       },
       {
         "s": 13.2,
@@ -67,6 +109,20 @@
         "pitch": 0.45,
         "seconds": 7,
         "caption": "The Solar System out to Neptune's orbit: about 9 billion kilometres across. Light needs around eight hours to cross it."
+      },
+      {
+        "s": 17.61,
+        "yaw": 0.4,
+        "pitch": 0.2,
+        "seconds": 8,
+        "caption": "The Orion Nebula, a cloud of glowing gas 24 light-years across where new stars are forming. Our Solar System is placed inside it for scale."
+      },
+      {
+        "s": 18.4,
+        "yaw": -0.3,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "Omega Centauri: about ten million old stars packed into a ball 150 light-years wide."
       },
       {
         "s": 21.25,
@@ -87,7 +143,7 @@
   {
     "id": "inside-you",
     "title": "Inside you",
-    "summary": "Zoom from a whole person into a skin cell, DNA, an atom and the quarks inside a proton.",
+    "summary": "Zoom from a whole person past an ant, a sand grain, a skin cell, a bacterium and a virus to DNA, an atom and the quarks inside a proton.",
     "steps": [
       {
         "s": 0.5,
@@ -97,22 +153,45 @@
         "caption": "Start with a person, about 1.7 metres tall. You are about to shrink a very long way."
       },
       {
-        "s": -2.5,
+        "s": -2.15,
         "seconds": 7,
-        "caption": "Zoom into your skin. It is only a couple of millimetres thick, and it is built from living cells."
+        "caption": "On the back of your hand: an ant, about 4 millimetres long, walking across skin that is built from living cells.",
+        "yaw": 0.9,
+        "pitch": 0.3
+      },
+      {
+        "s": -3.05,
+        "yaw": 0.7,
+        "pitch": 0.45,
+        "seconds": 6,
+        "caption": "A grain of sand, half a millimetre wide. You can just see one with your eyes. Everything smaller from here needs a microscope."
       },
       {
         "s": -4.3,
         "yaw": 0.5,
         "seconds": 6,
-        "caption": "A skin cell is about 30 micrometres across. Inside it, the nucleus holds your DNA."
+        "caption": "A skin cell is about 30 micrometres across. Its nucleus holds your DNA."
+      },
+      {
+        "s": -5.45,
+        "yaw": 0.2,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "For comparison, a bacterium: E. coli is about 15 times smaller than your skin cell and has no nucleus. Real ones live in your gut, not inside your cells."
+      },
+      {
+        "s": -6.45,
+        "yaw": 0.5,
+        "pitch": 0.15,
+        "seconds": 7,
+        "caption": "Smaller again: a virus that attacks bacteria. Its head holds a tightly wound thread of DNA."
       },
       {
         "s": -8.5,
         "yaw": -0.3,
         "pitch": 0.3,
         "seconds": 7,
-        "caption": "DNA: a double helix about 2 nanometres wide. Each of your cells holds around two metres of it, folded up tightly."
+        "caption": "DNA: a double helix about 2 nanometres wide. Each of your own cells holds around two metres of it, folded up tightly."
       },
       {
         "s": -9.6,
@@ -159,10 +238,24 @@
         "caption": "Planet Earth, about 12,700 kilometres across. The thin blue edge is the atmosphere that keeps you alive."
       },
       {
-        "s": 9.4,
+        "s": 8.95,
+        "yaw": 0.3,
+        "pitch": 0.5,
+        "seconds": 8,
+        "caption": "The Moon's orbit, to scale. The Moon is about 30 Earth-widths away, and its position around Earth gives us the phases, eclipses and tides."
+      },
+      {
+        "s": 9.5,
         "yaw": 0.2,
         "seconds": 8,
         "caption": "The Sun is a star about 109 Earths wide. It holds more than 99 percent of all the mass in the Solar System."
+      },
+      {
+        "s": 12.28,
+        "yaw": -0.2,
+        "pitch": 0.25,
+        "seconds": 8,
+        "caption": "Not all stars are like the Sun. Betelgeuse, shown here in the Sun's place for comparison, is about 770 times wider."
       },
       {
         "s": 13.2,
@@ -172,9 +265,23 @@
         "caption": "The Solar System out to Neptune's orbit. The planets are tiny specks in a huge, mostly empty space."
       },
       {
-        "s": 16.2,
+        "s": 16.0,
         "seconds": 8,
         "caption": "A light-year is the distance light travels in a year: nearly 10 trillion kilometres. The nearest star is over four light-years away."
+      },
+      {
+        "s": 17.61,
+        "yaw": 0.4,
+        "pitch": 0.2,
+        "seconds": 8,
+        "caption": "Stars are born in clouds like the Orion Nebula, 24 light-years across. The Solar System sits inside it here only to compare sizes."
+      },
+      {
+        "s": 18.4,
+        "yaw": -0.3,
+        "pitch": 0.3,
+        "seconds": 7,
+        "caption": "Omega Centauri, a globular cluster: ten million stars about 12 billion years old, held in a ball by gravity."
       },
       {
         "s": 21.25,

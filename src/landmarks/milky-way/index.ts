@@ -54,7 +54,7 @@ const meta: LandmarkMeta = {
   id: 'milky-way',
   name: 'Milky Way',
   sizeMeters: 1e21,
-  range: [16.8, 22.3],
+  range: [17.8, 22.3],
   evidence: 'modelled',
   nesting: 'true',
   blurb:

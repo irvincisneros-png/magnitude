@@ -4,7 +4,10 @@
     "title": "Cell spotter",
     "prompt": "Find the scale where a single cell fills your screen.",
     "type": "find",
-    "target": { "s": -4.4, "tolerance": 0.45 },
+    "target": {
+      "s": -4.4,
+      "tolerance": 0.45
+    },
     "hint": "Cells are about 30 micrometres across, which is 3 × 10⁻⁵ metres. Try the ruler near the 10⁻⁵ mark, then hold still.",
     "reward": "Cell Spotter"
   },
@@ -13,7 +16,10 @@
     "title": "Ten powers smaller",
     "prompt": "Zoom to something 10¹⁰ times smaller than you.",
     "type": "find",
-    "target": { "s": -9.77, "tolerance": 0.4 },
+    "target": {
+      "s": -9.77,
+      "tolerance": 0.4
+    },
     "hint": "Watch the badge under the view height: it says how many powers of ten smaller than you the view is. Atoms live around here.",
     "reward": "Atom Hunter"
   },
@@ -22,7 +28,10 @@
     "title": "Orbit keeper",
     "prompt": "Zoom out until the whole Solar System fills your view.",
     "type": "find",
-    "target": { "s": 13.2, "tolerance": 0.5 },
+    "target": {
+      "s": 13.2,
+      "tolerance": 0.5
+    },
     "hint": "Neptune's orbit is about 9 billion kilometres across, which is 9 × 10¹² metres.",
     "reward": "Orbit Keeper"
   },
@@ -31,7 +40,10 @@
     "title": "Edge of knowledge",
     "prompt": "Dive down to the Planck length, the smallest scale scientists talk about.",
     "type": "find",
-    "target": { "s": -35.2, "tolerance": 0.3 },
+    "target": {
+      "s": -35.2,
+      "tolerance": 0.3
+    },
     "hint": "Keep zooming in past the proton. Most of the way there is empty. You are looking for 10⁻³⁵ metres.",
     "reward": "Edge Walker"
   },
@@ -40,7 +52,12 @@
     "title": "Sun sizer",
     "prompt": "How many Earths fit across the Sun?",
     "type": "compare",
-    "compare": { "a": "earth", "b": "sun", "answer": 109, "tolerancePct": 5 },
+    "compare": {
+      "a": "earth",
+      "b": "sun",
+      "answer": 109,
+      "tolerancePct": 5
+    },
     "hint": "Open the Compare tray and pick Earth and the Sun. It shows both at true scale and says the ratio in words.",
     "reward": "Sun Sizer"
   },
@@ -49,7 +66,12 @@
     "title": "Hair's breadth",
     "prompt": "How many red blood cells would fit side by side across the width of a human hair?",
     "type": "compare",
-    "compare": { "a": "red-blood-cell", "b": "human-hair-width", "answer": 10, "tolerancePct": 20 },
+    "compare": {
+      "a": "red-blood-cell",
+      "b": "human-hair-width",
+      "answer": 10,
+      "tolerancePct": 20
+    },
     "hint": "A red blood cell is about 7 micrometres across. A hair is about 70 micrometres wide. Check with the Compare tray.",
     "reward": "Hair's Breadth"
   },
@@ -58,7 +80,12 @@
     "title": "Giant star",
     "prompt": "Estimate how many Suns would fit across the red supergiant Betelgeuse.",
     "type": "estimate",
-    "compare": { "a": "sun", "b": "betelgeuse", "answer": 763, "tolerancePct": 25 },
+    "compare": {
+      "a": "sun",
+      "b": "betelgeuse",
+      "answer": 770,
+      "tolerancePct": 25
+    },
     "hint": "Betelgeuse is about 10¹² metres across and the Sun is about 10⁹ metres. Divide, or let the Compare tray do it.",
     "reward": "Star Sizer"
   },
@@ -67,8 +94,67 @@
     "title": "Mountain maths",
     "prompt": "Estimate how many people, standing on each other's heads, would reach the height of Mount Everest.",
     "type": "estimate",
-    "compare": { "a": "human", "b": "mount-everest", "answer": 5205, "tolerancePct": 25 },
+    "compare": {
+      "a": "human",
+      "b": "mount-everest",
+      "answer": 5205,
+      "tolerancePct": 25
+    },
     "hint": "Mount Everest is about 8,849 metres high and a person is about 1.7 metres tall.",
     "reward": "Summit Stacker"
+  },
+  {
+    "id": "earths-to-moon",
+    "title": "Mind the gap",
+    "prompt": "How many Earths would fit in a line between Earth and the Moon?",
+    "type": "compare",
+    "compare": {
+      "a": "earth",
+      "b": "earth-moon",
+      "answer": 30,
+      "tolerancePct": 10
+    },
+    "hint": "The Moon is about 384,000 kilometres away and Earth is about 12,700 kilometres wide. Pick Earth and the Earth–Moon system in the Compare tray.",
+    "reward": "Gap Minder"
+  },
+  {
+    "id": "virus-fills-screen",
+    "title": "Virus hunter",
+    "prompt": "Find the scale where a single virus fills your screen.",
+    "type": "find",
+    "target": {
+      "s": -6.5,
+      "tolerance": 0.45
+    },
+    "hint": "Bacteriophage T4 is about 200 nanometres tall, which is 2 × 10⁻⁷ metres. Keep going down past the skin cell and the bacterium.",
+    "reward": "Virus Hunter"
+  },
+  {
+    "id": "bacteria-across-cell",
+    "title": "Small and smaller",
+    "prompt": "How many E. coli bacteria, end to end, would stretch across one human skin cell?",
+    "type": "compare",
+    "compare": {
+      "a": "e-coli",
+      "b": "cell",
+      "answer": 15,
+      "tolerancePct": 15
+    },
+    "hint": "E. coli is about 2 micrometres long. A skin cell is about 30 micrometres across.",
+    "reward": "Microbe Measurer"
+  },
+  {
+    "id": "ants-tall-human",
+    "title": "Ant ladder",
+    "prompt": "Estimate how many ants, nose to tail, would be as long as a person is tall.",
+    "type": "estimate",
+    "compare": {
+      "a": "ant",
+      "b": "human",
+      "answer": 425,
+      "tolerancePct": 25
+    },
+    "hint": "A black garden ant is about 4 millimetres long. A person is about 1.7 metres, which is 1,700 millimetres.",
+    "reward": "Ant Counter"
   }
 ]

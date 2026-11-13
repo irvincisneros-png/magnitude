@@ -23,6 +23,7 @@ declare global {
     __magnitude?: {
       getS(): number;
       setS(s: number): void;
+      setOrbit(yaw: number, pitch: number): void;
       flyTo(s: number, seconds?: number): Promise<void>;
       setQuality(mode: QualityMode): void;
       getActive(): { id: string; presence: number; opacity: number; ready: boolean; zoom: number }[];
@@ -58,6 +59,7 @@ const homeFor = (sizeMeters: number) => {
   const s = Math.log10(sizeMeters) + 0.25;
   const row = MANIFEST.find((r) => r.sizeMeters === sizeMeters);
   if (!row) return clampS(s);
+  if (row.home !== undefined) return clampS(row.home);
   const [lo, hi] = row.range;
   return clampS(Math.min(hi - 0.6, Math.max(lo + 0.6, s)));
 };
@@ -118,8 +120,10 @@ let dominant = '';
 function pickDominant(list: ActiveInfo[]): ActiveInfo | undefined {
   const cur = list.find((a) => a.id === dominant);
   let best: ActiveInfo | undefined;
-  for (const a of list) if (!best || a.presence > best.presence + 1e-6 || (Math.abs(a.presence - best.presence) < 1e-6 && a.ready)) best = a;
-  if (cur && best && best !== cur && best.presence < cur.presence + 0.1 && cur.presence > 0.3) return cur; // hysteresis
+  // Several landmarks can be fully present at once: prefer the one the view is framed on (zoom ≈ +0.25).
+  const score = (a: ActiveInfo) => a.presence - (MANIFEST.some((r) => r.id === a.id) ? 0.25 * Math.min(3, Math.abs(a.zoom - 0.25)) : 0);
+  for (const a of list) if (!best || score(a) > score(best) + 1e-6 || (Math.abs(score(a) - score(best)) < 1e-6 && a.ready)) best = a;
+  if (cur && best && best !== cur && score(best) < score(cur) + 0.1 && cur.presence > 0.3) return cur; // hysteresis
   return best;
 }
 function showDominant(a: ActiveInfo) {
@@ -154,6 +158,7 @@ let fpsAcc = 0, fpsN = 0, fps = 0;
 window.__magnitude = {
   getS: () => controller.s,
   setS: (s) => controller.setS(s),
+  setOrbit: (yaw, pitch) => { controller.yaw = yaw; controller.pitch = pitch; },
   flyTo: (s, seconds) => controller.flyTo(s, seconds),
   setQuality: (m) => engine.setQuality(m),
   getActive: () => active.map(({ id, presence, opacity, ready, zoom }) => ({ id, presence, opacity, ready, zoom })),

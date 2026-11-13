@@ -15,96 +15,84 @@
     "loose": "The landmark supports the dot point but it is not the main focus; teacher judgement."
   },
   "outcomes": {
-    "Y8 6.2.2": {
-      "year": 8,
-      "code": "6.2.2",
-      "unit": [
-        "6.2",
-        "Atomic structure"
-      ],
-      "text": "Identify protons, neutrons and electrons as subatomic particles",
+    "Y7 1.3.1": {
+      "year": 7,
+      "code": "1.3.1",
+      "unit": null,
+      "text": "Compare historical and current solar system models to show how models are modified or rejected due to new scientific evidence",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y8 6.2.5": {
-      "year": 8,
-      "code": "6.2.5",
-      "unit": [
-        "6.2",
-        "Atomic structure"
-      ],
-      "text": "Explain how observations made possible by new technologies have led to a more detailed understanding of atomic structure",
+    "Y7 1.3.2": {
+      "year": 7,
+      "code": "1.3.2",
+      "unit": null,
+      "text": "Explain that predictable and observable phenomena on the Earth are caused by the relative positions of the Sun, the Earth and the Moon",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y8 6.2.3": {
-      "year": 8,
-      "code": "6.2.3",
-      "unit": [
-        "6.2",
-        "Atomic structure"
-      ],
-      "text": "Describe the location, relative charge and mass of protons, neutrons and electrons using the planetary atomic model",
+    "Y7 1.3.3": {
+      "year": 7,
+      "code": "1.3.3",
+      "unit": null,
+      "text": "Use physical models or virtual simulations to explain the cyclic patterns of lunar phases and eclipses of the Sun and Moon",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y8 6.2.1": {
-      "year": 8,
-      "code": "6.2.1",
-      "unit": [
-        "6.2",
-        "Atomic structure"
-      ],
-      "text": "Identify the atom as the smallest unit of an element that retains the properties of that element",
+    "Y7 1.5.1": {
+      "year": 7,
+      "code": "1.5.1",
+      "unit": null,
+      "text": "Investigate how a recent advancement in science has increased knowledge of the world and the Universe",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y8 6.2.4": {
-      "year": 8,
-      "code": "6.2.4",
+    "Y7 2.1.7": {
+      "year": 7,
+      "code": "2.1.7",
       "unit": [
-        "6.2",
-        "Atomic structure"
+        "2.1",
+        "Forces in action"
       ],
-      "text": "Outline how models of atomic structure have changed over time",
+      "text": "Use the concept of forces to describe the motion of objects in orbit",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y10 5.1.2": {
-      "year": 10,
-      "code": "5.1.2",
+    "Y7 3.1.2": {
+      "year": 7,
+      "code": "3.1.2",
       "unit": [
-        "5.1",
-        "DNA structure and function"
+        "3.1",
+        "Classification of living things"
       ],
-      "text": "Observe and model the arrangement of genetic information in an organism to define and compare the terms DNA, gene, chromosome and genome",
-      "nesaOutcome": "SC5-GEV-02",
-      "nesaFocusArea": "Genetics and evolutionary change",
+      "text": "Discuss the role and importance of classification in ordering and organising the diversity of life on Earth",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
-      "officialSource": "cellscape/content/syllabus.json"
+      "officialSource": null
     },
-    "Y10 5.1.3": {
-      "year": 10,
-      "code": "5.1.3",
+    "Y7 3.1.3": {
+      "year": 7,
+      "code": "3.1.3",
       "unit": [
-        "5.1",
-        "DNA structure and function"
+        "3.1",
+        "Classification of living things"
       ],
-      "text": "Relate the structure of the DNA double helix to its functions",
-      "nesaOutcome": "SC5-GEV-02",
-      "nesaFocusArea": "Genetics and evolutionary change",
+      "text": "Classify species using scientific conventions from the binomial system of classification, including kingdom, phylum, class, order, family, genus and species",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
-      "officialSource": "cellscape/content/syllabus.json"
+      "officialSource": null
     },
     "Y7 3.2.1": {
       "year": 7,
@@ -127,6 +115,32 @@
         "Cells"
       ],
       "text": "Describe the functions of the cell membrane, cytoplasm, nucleus containing DNA, mitochondria and chloroplasts",
+      "nesaOutcome": "SC4-CLS-01",
+      "nesaFocusArea": "Cells and classification",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 3.2.5": {
+      "year": 7,
+      "code": "3.2.5",
+      "unit": [
+        "3.2",
+        "Cells"
+      ],
+      "text": "Conduct an investigation to observe and record the similarities and differences between different cells, including fungi, bacteria, plant and animal cells, using microscopes and/or images obtained from microscopes",
+      "nesaOutcome": "SC4-CLS-01",
+      "nesaFocusArea": "Cells and classification",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y7 3.2.7": {
+      "year": 7,
+      "code": "3.2.7",
+      "unit": [
+        "3.2",
+        "Cells"
+      ],
+      "text": "Draw single-celled organisms observed under a microscope",
       "nesaOutcome": "SC4-CLS-01",
       "nesaFocusArea": "Cells and classification",
       "source": "cellscape/content/school_sequence_7-10.json",
@@ -158,24 +172,66 @@
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": "cellscape/content/syllabus.json"
     },
-    "Y7 1.3.2": {
-      "year": 7,
-      "code": "1.3.2",
-      "unit": null,
-      "text": "Explain that predictable and observable phenomena on the Earth are caused by the relative positions of the Sun, the Earth and the Moon",
+    "Y8 6.2.1": {
+      "year": 8,
+      "code": "6.2.1",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Identify the atom as the smallest unit of an element that retains the properties of that element",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y8 7.3.9": {
+    "Y8 6.2.2": {
       "year": 8,
-      "code": "7.3.9",
+      "code": "6.2.2",
       "unit": [
-        "7.3",
-        "Geological change"
+        "6.2",
+        "Atomic structure"
       ],
-      "text": "Describe the elemental composition of the Earth and one or more other planets",
+      "text": "Identify protons, neutrons and electrons as subatomic particles",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.3": {
+      "year": 8,
+      "code": "6.2.3",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Describe the location, relative charge and mass of protons, neutrons and electrons using the planetary atomic model",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.4": {
+      "year": 8,
+      "code": "6.2.4",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Outline how models of atomic structure have changed over time",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 6.2.5": {
+      "year": 8,
+      "code": "6.2.5",
+      "unit": [
+        "6.2",
+        "Atomic structure"
+      ],
+      "text": "Explain how observations made possible by new technologies have led to a more detailed understanding of atomic structure",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
@@ -194,50 +250,40 @@
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y10 6.4.6": {
-      "year": 10,
-      "code": "6.4.6",
-      "unit": [
-        "6.4",
-        "Nuclear reactions"
-      ],
-      "text": "Describe nuclear fission and nuclear fusion",
-      "nesaOutcome": null,
-      "nesaFocusArea": null,
-      "source": "cellscape/content/school_sequence_7-10.json",
-      "officialSource": null
-    },
-    "Y10 7.3.4": {
-      "year": 10,
-      "code": "7.3.4",
+    "Y8 7.3.5": {
+      "year": 8,
+      "code": "7.3.5",
       "unit": [
         "7.3",
-        "Light waves"
+        "Geological change"
       ],
-      "text": "Explain how the electromagnetic spectrum is used to learn about stars",
+      "text": "Conduct investigations or simulations to compare the observable properties of different types of minerals and rocks",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y7 1.3.1": {
-      "year": 7,
-      "code": "1.3.1",
-      "unit": null,
-      "text": "Compare historical and current solar system models to show how models are modified or rejected due to new scientific evidence",
-      "nesaOutcome": null,
-      "nesaFocusArea": null,
-      "source": "cellscape/content/school_sequence_7-10.json",
-      "officialSource": null
-    },
-    "Y10 6.4.1": {
-      "year": 10,
-      "code": "6.4.1",
+    "Y8 7.3.6": {
+      "year": 8,
+      "code": "7.3.6",
       "unit": [
-        "6.4",
-        "Nuclear reactions"
+        "7.3",
+        "Geological change"
       ],
-      "text": "Outline how the first elements were formed after the Big Bang",
+      "text": "Use the rock cycle to explain the geological processes that lead to the formation and transformation of different types of rocks",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y8 7.3.9": {
+      "year": 8,
+      "code": "7.3.9",
+      "unit": [
+        "7.3",
+        "Geological change"
+      ],
+      "text": "Describe the elemental composition of the Earth and one or more other planets",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
@@ -269,11 +315,105 @@
       "source": "cellscape/content/school_sequence_7-10.json",
       "officialSource": null
     },
-    "Y7 1.5.1": {
-      "year": 7,
-      "code": "1.5.1",
-      "unit": null,
-      "text": "Investigate how a recent advancement in science has increased knowledge of the world and the Universe",
+    "Y9 2.2.1": {
+      "year": 9,
+      "code": "2.2.1",
+      "unit": [
+        "2.2",
+        "Infectious and non-infectious diseases"
+      ],
+      "text": "Distinguish between infectious and non-infectious diseases",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y9 2.2.2": {
+      "year": 9,
+      "code": "2.2.2",
+      "unit": [
+        "2.2",
+        "Infectious and non-infectious diseases"
+      ],
+      "text": "Identify causes of non-infectious and infectious diseases",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y9 4.3.4": {
+      "year": 9,
+      "code": "4.3.4",
+      "unit": [
+        "4.3",
+        "Impacts of present-day climate change"
+      ],
+      "text": "Investigate how satellites collect global data, including data on ocean temperatures, sea levels, and forest and ice cover, and examine how this data is used to evaluate the impact of climate change",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 5.1.2": {
+      "year": 10,
+      "code": "5.1.2",
+      "unit": [
+        "5.1",
+        "DNA structure and function"
+      ],
+      "text": "Observe and model the arrangement of genetic information in an organism to define and compare the terms DNA, gene, chromosome and genome",
+      "nesaOutcome": "SC5-GEV-02",
+      "nesaFocusArea": "Genetics and evolutionary change",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y10 5.1.3": {
+      "year": 10,
+      "code": "5.1.3",
+      "unit": [
+        "5.1",
+        "DNA structure and function"
+      ],
+      "text": "Relate the structure of the DNA double helix to its functions",
+      "nesaOutcome": "SC5-GEV-02",
+      "nesaFocusArea": "Genetics and evolutionary change",
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": "cellscape/content/syllabus.json"
+    },
+    "Y10 6.4.1": {
+      "year": 10,
+      "code": "6.4.1",
+      "unit": [
+        "6.4",
+        "Nuclear reactions"
+      ],
+      "text": "Outline how the first elements were formed after the Big Bang",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 6.4.6": {
+      "year": 10,
+      "code": "6.4.6",
+      "unit": [
+        "6.4",
+        "Nuclear reactions"
+      ],
+      "text": "Describe nuclear fission and nuclear fusion",
+      "nesaOutcome": null,
+      "nesaFocusArea": null,
+      "source": "cellscape/content/school_sequence_7-10.json",
+      "officialSource": null
+    },
+    "Y10 7.3.4": {
+      "year": 10,
+      "code": "7.3.4",
+      "unit": [
+        "7.3",
+        "Light waves"
+      ],
+      "text": "Explain how the electromagnetic spectrum is used to learn about stars",
       "nesaOutcome": null,
       "nesaFocusArea": null,
       "source": "cellscape/content/school_sequence_7-10.json",
@@ -341,6 +481,36 @@
         }
       ]
     },
+    "phage": {
+      "classroomUse": "Use the virus to ask what counts as alive: it has DNA but no cell and cannot reproduce on its own. Compare it with the bacterium it infects, then discuss why viruses and bacteria need different treatments.",
+      "outcomes": [
+        {
+          "code": "Y9 2.2.2",
+          "fit": "loose"
+        },
+        {
+          "code": "Y9 2.2.1",
+          "fit": "loose"
+        }
+      ]
+    },
+    "e-coli": {
+      "classroomUse": "Compare this bacterium with the skin cell one step out: no nucleus, about 15 times smaller. Students list what the two cells share and what only the human cell has, then draw the bacterium.",
+      "outcomes": [
+        {
+          "code": "Y7 3.2.5",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 3.2.7",
+          "fit": "direct"
+        },
+        {
+          "code": "Y9 2.2.2",
+          "fit": "loose"
+        }
+      ]
+    },
     "cell": {
       "classroomUse": "Pair with a microscope lesson. Students name organelles in the scene and estimate how many cells would fit across a pin head.",
       "outcomes": [
@@ -354,6 +524,32 @@
         },
         {
           "code": "Y7 3.2.10",
+          "fit": "loose"
+        }
+      ]
+    },
+    "sand-grain": {
+      "classroomUse": "Zoom from the beach to one grain. Ask where the grain came from and why it is rounded, then link weathering, erosion and deposition to the rock cycle.",
+      "outcomes": [
+        {
+          "code": "Y8 7.3.5",
+          "fit": "loose"
+        },
+        {
+          "code": "Y8 7.3.6",
+          "fit": "loose"
+        }
+      ]
+    },
+    "ant": {
+      "classroomUse": "Students use the labels to find the features that make an ant an insect (three body parts, six legs, antennae), then place it in the classification hierarchy from kingdom to species.",
+      "outcomes": [
+        {
+          "code": "Y7 3.1.3",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 3.1.2",
           "fit": "loose"
         }
       ]
@@ -380,6 +576,27 @@
         }
       ]
     },
+    "earth-moon": {
+      "classroomUse": "Show the true distance to the Moon: 30 Earths fit in the gap. Orbit the view to see why half the Moon is always lit and how phases and eclipses depend on where the Sun, Earth and Moon are. The satellite rings link to orbits and forces.",
+      "outcomes": [
+        {
+          "code": "Y7 1.3.2",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 1.3.3",
+          "fit": "direct"
+        },
+        {
+          "code": "Y7 2.1.7",
+          "fit": "direct"
+        },
+        {
+          "code": "Y9 4.3.4",
+          "fit": "loose"
+        }
+      ]
+    },
     "sun": {
       "classroomUse": "Compare the Sun and Earth with the Compare tray (\"109 Earths fit across the Sun\"). Discuss where the energy in sunlight comes from.",
       "outcomes": [
@@ -397,6 +614,19 @@
         }
       ]
     },
+    "betelgeuse": {
+      "classroomUse": "Compare Betelgeuse with the Sun and the planets' orbits. Ask how anyone can measure a star 550 light-years away, and what its red colour says about its surface temperature.",
+      "outcomes": [
+        {
+          "code": "Y10 7.3.4",
+          "fit": "direct"
+        },
+        {
+          "code": "Y10 6.4.6",
+          "fit": "loose"
+        }
+      ]
+    },
     "solar-system": {
       "classroomUse": "Contrast the scale of the Solar System with textbook diagrams, which squash distances. Students compare historical and current models using the nesting notes.",
       "outcomes": [
@@ -407,6 +637,24 @@
         {
           "code": "Y7 1.3.2",
           "fit": "loose"
+        }
+      ]
+    },
+    "orion-nebula": {
+      "classroomUse": "A place where stars are forming now. Discuss what the colours of the glowing gas tell astronomers about the elements in it, and how light from different parts of the spectrum sees through the dust.",
+      "outcomes": [
+        {
+          "code": "Y10 7.3.4",
+          "fit": "direct"
+        }
+      ]
+    },
+    "omega-centauri": {
+      "classroomUse": "Ten million old stars in one ball. Students look at star colours (red giants, blue stragglers) and discuss how colour and brightness are used to work out the ages of stars.",
+      "outcomes": [
+        {
+          "code": "Y10 7.3.4",
+          "fit": "direct"
         }
       ]
     },

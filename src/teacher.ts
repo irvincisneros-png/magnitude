@@ -77,7 +77,7 @@ for (const row of MANIFEST) {
   card.append(h('div', { class: 'lm-head' },
     h('h3', {}, row.name),
     h('span', { class: 'size' }, formatFriendly(row.sizeMeters) === formatSci(row.sizeMeters) ? formatSci(row.sizeMeters) : `${formatFriendly(row.sizeMeters)} · ${formatSci(row.sizeMeters)}`),
-    h('a', { class: 'link', href: link(home(row.sizeMeters, row.range)) }, 'Open in Magnitude')));
+    h('a', { class: 'link', href: link(row.home ?? home(row.sizeMeters, row.range)) }, 'Open in Magnitude')));
   if (d) {
     card.append(h('p', { class: 'use' }, d.classroomUse));
     card.append(d.outcomes.length ? outcomeList(d.outcomes) : h('p', { class: 'none' }, 'No verified outcome yet. See "Needs teacher check" below.'));
