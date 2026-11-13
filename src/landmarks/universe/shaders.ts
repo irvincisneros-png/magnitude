@@ -121,10 +121,10 @@ export const flowFrag = /* glsl */ `
   varying float vSeed;
   void main() {
     float ph = fract(vT * 2.2 - uTime * 0.035 + vSeed * 7.0);
-    float pulse = pow(ph, 14.0) * 0.9;
+    float pulse = pow(ph, 14.0) * 0.35;
     float ends = smoothstep(0.0, 0.08, vT) * (1.0 - smoothstep(0.55, 1.0, vT));
     vec3 col = mix(vec3(0.35, 0.55, 1.0), vec3(1.0, 0.95, 0.85), vT * 0.8);
-    gl_FragColor = vec4(col * (0.03 + pulse) * ends * uA, 0.0);
+    gl_FragColor = vec4(col * (0.012 + pulse) * ends * uA, 0.0);
   }`;
 
 /** "You are here" ring at the origin (constant screen size). */
@@ -178,10 +178,11 @@ export const cmbFrag = /* glsl */ `
     vec3 d = normalize(vDir);
     vec2 uv = vec2(atan(d.z, d.x) / 6.2832 + 0.5, asin(clamp(d.y, -1.0, 1.0)) / 3.1416 + 0.5);
     float t = texture2D(tMap, uv).r * 2.0 - 1.0;
-    vec3 col = planck(t * 1.1);
+    // gentler contrast than a Planck press image, so it reads as a soft glow rather than noise
+    vec3 col = mix(vec3(0.42, 0.4, 0.42), planck(t * 0.8), 0.6);
     float ndv = abs(dot(normalize(vN), normalize(vView)));
     // a thin glowing shell looks brighter where we look along it (the limb)
-    float limb = mix(1.0, min(4.0, 1.0 / max(ndv, 0.08)), uOutside);
+    float limb = mix(1.0, min(3.2, 1.0 / max(ndv, 0.1)), uOutside);
     float face = mix(1.0, gl_FrontFacing ? 0.5 : 0.4, uOutside);
     gl_FragColor = vec4(col * uA * limb * face * 0.03, 0.0);
   }`;

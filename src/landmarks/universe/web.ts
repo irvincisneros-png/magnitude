@@ -30,6 +30,8 @@ class Voronoi {
   nd = [0, 0, 0, 0];
   /** filament direction / wall normal from the last projection */
   dir: V3 = [0, 1, 0];
+  /** 0..1 hash identifying the last filament (edge) found */
+  edgeKey = 0;
   private bd = new Float64Array(4);
   private bp = new Float64Array(12);
   constructor(readonly S: number, readonly key: number) {}
@@ -94,6 +96,8 @@ class Voronoi {
     const cc = add(a, scl(add(scl(cross(v, w), dot(u, u)), scl(cross(w, u), dot(v, v))), 1 / (2 * ww)));
     const dir = norm(w);
     this.dir = dir;
+    // identify this edge by the midpoint of its three seeds (independent of where on it we landed)
+    this.edgeKey = hash3(Math.round((a[0] + this.n[1][0] + this.n[2][0]) / this.S * 3), Math.round((a[1] + this.n[1][1] + this.n[2][1]) / this.S * 3), Math.round((a[2] + this.n[1][2] + this.n[2][2]) / this.S * 3), this.key + 5);
     const p = add(cc, scl(dir, dot(sub(x, cc), dir)));
     const r = len(sub(p, a));
     if (r > this.S * 1.6) return null;
@@ -158,6 +162,8 @@ export interface WebOptions {
   mix?: [number, number, number];
   /** Emit a small run of galaxies per projection (cheaper; reads as groups when resolved). Default true. */
   multi?: boolean;
+  /** Diffuse-glow sprites per galaxy (0 = none): soft haze laid exactly on the skeleton. */
+  haze?: number;
 }
 
 const LEVELS = LEVEL_S.map((S, i) => new Voronoi(S, 11 + i * 12));
@@ -176,6 +182,8 @@ function richness(v: Voronoi, p: V3) {
  */
 export class WebBuilder {
   readonly pb: PopBuilder;
+  /** soft glow sprites along filaments / around nodes (light from countless faint galaxies) */
+  readonly haze: PopBuilder;
   private rng: Rng;
   private web: Voronoi;
   private coarseWeb: Voronoi;
@@ -183,6 +191,7 @@ export class WebBuilder {
   private guard: number;
   constructor(private o: WebOptions) {
     this.pb = new PopBuilder(o.count);
+    this.haze = new PopBuilder(Math.max(1, Math.round(o.count * (o.haze ?? 0))));
     this.rng = new Rng(o.seed);
     this.web = LEVELS[o.level];
     this.coarseWeb = LEVELS[o.level + 1];
@@ -204,9 +213,30 @@ export class WebBuilder {
 
   build(): Pop { while (!this.step(1e9)); return this.pb.build(); }
 
-  private emit(p: V3, kind: Kind, bright: number) {
+  private glow(p0: V3, size: number, c: V3, k: number) {
+    const o = this.o;
+    if (!o.haze || this.haze.count >= this.haze.pos.length / 3) return;
+    const p = this.warp(p0);
+    if (o.accept && !o.accept(p, this.rng)) return;
+    this.haze.push(p, [c[0] * k, c[1] * k, c[2] * k], size, this.rng.next(), T_GLOW, 1);
+  }
+  /** How many haze sprites to lay for one projection (expected value = haze fraction × k). */
+  private hazeN(k: number) { const c = (this.o.haze ?? 0) * 1.6 * k; return Math.floor(c) + (this.rng.next() < c % 1 ? 1 : 0); }
+
+  /** Smooth warp of space so Voronoi edges bend into curving filaments (same field for galaxies and haze). */
+  private warp(p: V3): V3 {
+    const S = this.web.S, f = 1.4 / S, a = 0.09 * S;
+    return [
+      p[0] + a * vnoise(p[0] * f, p[1] * f, p[2] * f, 61),
+      p[1] + a * vnoise(p[0] * f, p[1] * f, p[2] * f, 62),
+      p[2] + a * vnoise(p[0] * f, p[1] * f, p[2] * f, 63),
+    ];
+  }
+
+  private emit(p0: V3, kind: Kind, bright: number) {
     const o = this.o, rng = this.rng;
     if (this.pb.count >= o.count) return;
+    const p = this.warp(p0);
     if (o.accept && !o.accept(p, rng)) return;
     if (o.glow) {
       const c = kind === 'node' ? COL.ell : kind === 'field' ? COL.irr : rng.next() < 0.5 ? COL.spi : COL.ell;
@@ -236,20 +266,25 @@ export class WebBuilder {
       const rich = richness(web, v);
       if (rng.next() > 0.12 + 0.88 * rich) return;
       // a cluster or group: a tight core and a long tail (roughly an NFW / King profile)
-      const m = o.multi === false ? 1 : 2 + Math.floor(rich * 7 * rng.next());
+      const m = o.multi === false ? 1 : 1 + Math.floor(rich * 4 * rng.next());
       for (let i = 0; i < m; i++) {
         const u = rng.next();
-        const r = S * (0.012 + 0.03 * rich) * Math.min(6, u / Math.max(0.05, 1 - u));
-        this.emit(add(v, scl(rng.dir(), r)), kind, 1.1 + 0.6 * rich);
+        const r = S * (0.025 + 0.05 * rich) * Math.min(5, u / Math.max(0.05, 1 - u));
+        this.emit(add(v, scl(rng.dir(), r)), kind, 0.55 + 0.2 * rich);
       }
+      for (let h = this.hazeN(1); h > 0; h--) this.glow(add(v, rng.gauss3(S * 0.02)), S * (0.05 + 0.05 * rich), [0.95, 0.85, 0.75], 0.55);
     } else if (kind === 'fil') {
       const f = web.filament(x);
       if (!f) return;
       const dir = web.dir;
+      // a few filaments are thick and rich, most are thin and faint
+      const fr = web.edgeKey;
+      if (rng.next() > 0.12 + 0.88 * fr * fr) return;
       // beads: galaxy groups strung along the filament
       const bead = smooth(-0.25, 0.55, vnoise(f[0] / S * 6, f[1] / S * 6, f[2] / S * 6, 5));
       if (rng.next() > 0.22 + 0.78 * bead) return;
-      for (let i = 0; i < (o.multi === false ? 1 : 3); i++) this.emit(add(add(f, scl(dir, (rng.next() - 0.5) * S * 0.1)), rng.gauss3(S * 0.018)), kind, 1);
+      for (let i = 0; i < (o.multi === false ? 1 : 3); i++) this.emit(add(add(f, scl(dir, (rng.next() - 0.5) * S * 0.1)), rng.gauss3(S * 0.028)), kind, 1);
+      for (let h = this.hazeN(1.3); h > 0; h--) this.glow(add(f, scl(dir, (rng.next() - 0.5) * S * 0.2)), S * 0.045, [0.82, 0.86, 1.0], 1.0);
     } else if (kind === 'wall') {
       const w = web.wall(x);
       if (!w) return;
@@ -261,6 +296,7 @@ export class WebBuilder {
         const jn = dot(j, n);
         this.emit(add(add(w, sub(j, scl(n, jn))), rng.gauss3(S * 0.012)), kind, 0.8);
       }
+      for (let h = this.hazeN(0.5); h > 0; h--) this.glow(add(w, rng.gauss3(S * 0.03)), S * 0.07, [0.7, 0.78, 1.0], 0.35);
     } else {
       if (web.wallDist(x) < S * 0.18) return;
       if (rng.next() > 0.35) return;

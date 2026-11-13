@@ -257,14 +257,16 @@ const GROUPS: [number, number, number, number, number][] = [
 ];
 
 function cluster(pb: PopBuilder, rng: Rng, c: V3, count: number, rc: number, rmax: number, ellFrac: number, bcg: number) {
-  pb.push(c, scl(COL.ell, 1.2), bcg, rng.next(), T_ELL, 0.85); // the giant elliptical at the centre (e.g. M87)
+  // rich clusters: each member a little fainter, so the swarm glows softly instead of saturating
+  const k = Math.min(1, Math.sqrt(200 / Math.max(1, count)));
+  pb.push(c, scl(COL.ell, 0.8), bcg * 0.6, rng.next(), T_ELL, 0.85); // the giant elliptical at the centre (e.g. M87)
   for (let i = 0; i < count; i++) {
     const u = rng.next();
     const r = Math.min(rmax, rc * Math.sqrt(u / Math.max(0.02, 1 - u)));
     const p = add(c, scl(rng.dir(), r));
     const ell = rng.next() < ellFrac * (1 - 0.6 * r / rmax);
-    if (ell) pb.push(p, tint(COL.ell, 1.1, rng), 0.025 + 0.1 * rng.next() ** 3, rng.next(), T_ELL, 0.5 + 0.5 * rng.next());
-    else pb.push(p, tint(COL.spi, 1, rng), 0.03 + 0.08 * rng.next() ** 2, rng.next(), T_SPI, Math.max(0.15, rng.next()));
+    if (ell) pb.push(p, tint(COL.ell, 0.6 * k, rng), 0.025 + 0.1 * rng.next() ** 3, rng.next(), T_ELL, 0.5 + 0.5 * rng.next());
+    else pb.push(p, tint(COL.spi, 0.6 * k, rng), 0.03 + 0.08 * rng.next() ** 2, rng.next(), T_SPI, Math.max(0.15, rng.next()));
   }
 }
 
@@ -294,9 +296,9 @@ function filament(pb: PopBuilder, rng: Rng, a: V3, b: V3, count: number, thick: 
     const c = centres[Math.floor(rng.next() * centres.length)];
     const p = add(c, rng.gauss3(thick * (rng.next() < 0.7 ? 0.35 : 1.0)));
     const u = rng.next();
-    if (u < 0.3) pb.push(p, tint(COL.ell, 0.95, rng), 0.025 + 0.06 * rng.next() ** 2, rng.next(), T_ELL, 0.6 + 0.4 * rng.next());
-    else if (u < 0.5) pb.push(p, tint(COL.irr, 0.8, rng), 0.01 + 0.02 * rng.next(), rng.next(), T_IRR, 0.6 + 0.4 * rng.next());
-    else pb.push(p, tint(COL.spi, 1, rng), 0.03 + 0.07 * rng.next() ** 2, rng.next(), T_SPI, Math.max(0.15, rng.next()));
+    if (u < 0.3) pb.push(p, tint(COL.ell, 0.5, rng), 0.025 + 0.06 * rng.next() ** 2, rng.next(), T_ELL, 0.6 + 0.4 * rng.next());
+    else if (u < 0.5) pb.push(p, tint(COL.irr, 0.45, rng), 0.01 + 0.02 * rng.next(), rng.next(), T_IRR, 0.6 + 0.4 * rng.next());
+    else pb.push(p, tint(COL.spi, 0.5, rng), 0.03 + 0.07 * rng.next() ** 2, rng.next(), T_SPI, Math.max(0.15, rng.next()));
   }
 }
 
@@ -305,14 +307,15 @@ export function buildNeighbourhood(f: number): PopBuilder {
   const rng = new Rng(777);
   const n = (x: number) => Math.max(20, Math.round(x * f));
   for (const [l, b, d, m, r] of GROUPS) group(pb, rng, galPos(l, b, d), Math.max(6, Math.round(m * Math.max(0.4, f))), r);
-  cluster(pb, rng, VIRGO, n(1500), 1.6, 8, 0.6, 0.35);
-  cluster(pb, rng, FORNAX, n(260), 0.8, 3, 0.65, 0.2);
-  cluster(pb, rng, HYDRA, n(450), 1.2, 5, 0.65, 0.3);
-  cluster(pb, rng, CENTAURUS, n(700), 1.5, 6, 0.65, 0.35);
-  cluster(pb, rng, NORMA, n(900), 1.8, 7, 0.7, 0.4);
-  cluster(pb, rng, PERSEUS, n(900), 1.6, 7, 0.7, 0.4);
-  cluster(pb, rng, COMA, n(1100), 1.8, 8, 0.75, 0.4);
-  cluster(pb, rng, LEO_A1367, n(400), 1.2, 5, 0.6, 0.3);
+  // clusters: many modest galaxies in a loose swarm (a tight core reads as a single star-like flare)
+  cluster(pb, rng, VIRGO, n(800), 2.6, 9, 0.6, 0.35);
+  cluster(pb, rng, FORNAX, n(160), 1.2, 3.5, 0.65, 0.2);
+  cluster(pb, rng, HYDRA, n(260), 1.8, 5.5, 0.65, 0.3);
+  cluster(pb, rng, CENTAURUS, n(380), 2.2, 6.5, 0.65, 0.35);
+  cluster(pb, rng, NORMA, n(480), 2.6, 7.5, 0.7, 0.4);
+  cluster(pb, rng, PERSEUS, n(480), 2.4, 7.5, 0.7, 0.4);
+  cluster(pb, rng, COMA, n(600), 2.6, 8.5, 0.75, 0.4);
+  cluster(pb, rng, LEO_A1367, n(240), 1.8, 5.5, 0.6, 0.3);
   const O: V3 = [0, 0, 0];
   const links: [V3, V3, number, number][] = [
     [O, VIRGO, 900, 3.0],            // the Local Sheet towards Virgo
@@ -330,7 +333,7 @@ export function buildNeighbourhood(f: number): PopBuilder {
     [PERSEUS, galPos(170, 10, 300), 400, 7],
     [COMA, galPos(30, 50, 330), 400, 8],
   ];
-  for (const [a, b, m, t] of links) filament(pb, rng, a, b, n(m), t);
+  for (const [a, b, m, t] of links) filament(pb, rng, a, b, n(m * 0.2), t * 1.6);
   return pb;
 }
 

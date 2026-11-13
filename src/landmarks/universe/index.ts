@@ -20,7 +20,7 @@ import {
   COMA, GREAT_ATTRACTOR, LMC, M31, M33, MW_POS, SMC, VIRGO, buildLocalGroup, buildNeighbourhood, buildStreamlines,
 } from './local';
 import { cmbFrag, cmbVert, dustFrag, flowFrag, flowVert, galaxyFrag, galaxyVert, haloFrag, haloVert, ringFrag, ringVert } from './shaders';
-import { MLY, R_UNIVERSE_MLY, Rng, add, galDir, galPos, len, scl, smooth, vnoise, type Pop, type V3 } from './util';
+import { MLY, PopBuilder, R_UNIVERSE_MLY, Rng, add, galDir, galPos, len, scl, smooth, vnoise, type Pop, type V3 } from './util';
 import { LOCAL_VOID, LOCAL_VOID_R, WebBuilder } from './web';
 
 /** Same orientation as the Milky Way scene: ecliptic north pole up, then a 140° spin about +Y. */
@@ -76,7 +76,7 @@ const meta: LandmarkMeta = {
   lightTime:
     'The universe is 13.8 billion years old, yet the observable universe is 93 billion light-years across, because space kept expanding while the oldest light was travelling to us.',
   timescale: 'Galaxy clusters and filaments take billions of years to form; the universe has been expanding for 13.8 billion years.',
-  post: { bloom: 0.5, exposure: 1.0 },
+  post: { bloom: 0.32, exposure: 1.0 },
   labels,
 };
 
@@ -119,11 +119,11 @@ function popGeometry(p: Pop): THREE.BufferGeometry {
 
 /** Particle fractions per tier. Low keeps the web (it carries the structure) and thins the rest: ~40k in all. */
 const TIER = {
-  low: { local: 0.18, near: 0.07, far: 0.05, lg: 0.1, neigh: 0.1 },
+  low: { local: 0.12, near: 0.05, far: 0.04, lg: 0.08, neigh: 0.1 },
   medium: { local: 0.5, near: 0.45, far: 0.45, lg: 0.45, neigh: 0.45 },
   high: { local: 1, near: 1, far: 1, lg: 1, neigh: 1 },
 } as const;
-const COUNTS = { local: 85_000, near: 160_000, far: 100_000 };
+const COUNTS = { local: 85_000, near: 140_000, far: 75_000 };
 
 // ------------------------------------------------------------------- populations
 
@@ -133,21 +133,26 @@ const voidCarve = (p: V3, rng: Rng) => {
   return d > r || rng.next() < 0.03;
 };
 
+/** Haze carries the structure when galaxies are few, so it thins more slowly than they do. */
+const hazeFor = (base: number, f: number) => Math.min(1.4, base / Math.sqrt(f));
+
 function localWeb(f: number): WebBuilder {
   return new WebBuilder({
-    count: Math.round(COUNTS.local * f), seed: 1001, level: 0, coarse: 0,
-    where: (rng) => { for (;;) { const p = rng.ball(600); if (len(p) > 6) return p; } },
+    count: Math.round(COUNTS.local * f), seed: 1001, level: 0, coarse: 0, haze: hazeFor(0.25, f), mix: [0.16, 0.56, 0.2],
+    // mostly uniform, with a gentle extra density near us (where it is seen up close)
+    where: (rng) => {
+      if (rng.next() < 0.15) return scl(rng.dir(), 40 * Math.pow(600 / 40, rng.next()));
+      for (;;) { const p = rng.ball(600); if (len(p) > 6) return p; }
+    },
     accept: (p, rng) => { const r = len(p); return r > 5.5 && rng.next() > smooth(450, 600, r) && voidCarve(p, rng); },
   });
 }
 function nearWeb(f: number): WebBuilder {
   return new WebBuilder({
-    count: Math.round(COUNTS.near * f), seed: 2002, level: 1, coarse: 0,
-    where: (rng) => {
-      if (rng.next() < 0.18) return scl(rng.dir(), 300 * Math.pow(6000 / 300, rng.next()));
-      return rng.ball(6000);
-    },
-    accept: (p, rng) => { const r = len(p); return r > 20 && rng.next() > smooth(4500, 6000, r) && voidCarve(p, rng); },
+    count: Math.round(COUNTS.near * f), seed: 2002, level: 1, coarse: 0, haze: hazeFor(0.3, f), mix: [0.26, 0.5, 0.19],
+    // ~160 galaxies per 420-Mly cell: dense enough for the skeleton to read through the depth
+    where: (rng) => rng.ball(2700),
+    accept: (p, rng) => { const r = len(p); return r > 20 && rng.next() > smooth(2000, 2700, r) && voidCarve(p, rng); },
   });
 }
 function farWeb(f: number): WebBuilder {
@@ -171,7 +176,7 @@ const factory: LandmarkFactory = () => {
   scene.add(mly);
 
   const mats = {
-    far: galaxyMaterial(), near: galaxyMaterial(), local: galaxyMaterial(), neigh: galaxyMaterial(),
+    far: galaxyMaterial(), near: galaxyMaterial(), local: galaxyMaterial(), localHaze: galaxyMaterial(), nearHaze: galaxyMaterial(), neigh: galaxyMaterial(),
     lg: galaxyMaterial(), lgDust: galaxyMaterial(true), lgFar: galaxyMaterial(), mw: galaxyMaterial(), mwDust: galaxyMaterial(true),
   };
   const flowMat = additive(flowVert, flowFrag, { uTime: { value: 0 }, uA: { value: 0 } });
@@ -202,7 +207,8 @@ const factory: LandmarkFactory = () => {
   const geoms: THREE.BufferGeometry[] = [];
 
   /** Procedural web populations are built a slice at a time (they take a few seconds in all). */
-  interface Stream { builder: WebBuilder; geo: THREE.BufferGeometry; shown: number }
+  interface Part { pb: PopBuilder; geo: THREE.BufferGeometry; shown: number }
+  interface Stream { builder: WebBuilder; parts: Part[] }
   let streams: Stream[] = [];
   let builtTier: Quality | null = null;
   /** brightness compensation when a tier draws fewer galaxies */
@@ -223,17 +229,22 @@ const factory: LandmarkFactory = () => {
     mly.add(o); objects.push(o); geoms.push(g);
   };
 
-  function addStream(builder: WebBuilder, mat: THREE.ShaderMaterial, order: number) {
-    const { pos, col, par } = builder.pb;
+  function streamPart(pb: PopBuilder, mat: THREE.ShaderMaterial, order: number): Part {
     const g = new THREE.BufferGeometry();
-    for (const [name, arr, k] of [['position', pos, 3], ['aCol', col, 3], ['aPar', par, 4]] as const) {
+    for (const [name, arr, k] of [['position', pb.pos, 3], ['aCol', pb.col, 3], ['aPar', pb.par, 4]] as const) {
       const a = new THREE.BufferAttribute(arr, k);
       a.setUsage(THREE.DynamicDrawUsage);
       g.setAttribute(name, a);
     }
     g.setDrawRange(0, 0);
     addObj(new THREE.Points(g, mat), g, order);
-    streams.push({ builder, geo: g, shown: 0 });
+    return { pb, geo: g, shown: 0 };
+  }
+
+  function addStream(builder: WebBuilder, mat: THREE.ShaderMaterial, order: number, hazeMat?: THREE.ShaderMaterial) {
+    const parts = [streamPart(builder.pb, mat, order)];
+    if (hazeMat) parts.push(streamPart(builder.haze, hazeMat, 0));
+    streams.push({ builder, parts });
   }
 
   /** Advance the unfinished builders for about `ms`, nearest-in-scale first, and upload new points. */
@@ -247,16 +258,16 @@ const factory: LandmarkFactory = () => {
       if (left <= 0) break;
       st.builder.step(left);
     }
-    for (const st of streams) {
-      const n = st.builder.pb.count;
-      if (n === st.shown) continue;
+    for (const st of streams) for (const pt of st.parts) {
+      const n = pt.pb.count;
+      if (n === pt.shown) continue;
       for (const name of ['position', 'aCol', 'aPar']) {
-        const a = st.geo.getAttribute(name) as THREE.BufferAttribute;
-        a.addUpdateRange(st.shown * a.itemSize, (n - st.shown) * a.itemSize);
+        const a = pt.geo.getAttribute(name) as THREE.BufferAttribute;
+        a.addUpdateRange(pt.shown * a.itemSize, (n - pt.shown) * a.itemSize);
         a.needsUpdate = true;
       }
-      st.geo.setDrawRange(0, n);
-      st.shown = n;
+      pt.geo.setDrawRange(0, n);
+      pt.shown = n;
     }
   }
 
@@ -275,8 +286,8 @@ const factory: LandmarkFactory = () => {
       const g = popGeometry(p);
       addObj(new THREE.Points(g, m), g, order);
     };
-    addStream(localWeb(f.local), mats.local, 3);
-    addStream(nearWeb(f.near), mats.near, 2);
+    addStream(localWeb(f.local), mats.local, 3, mats.localHaze);
+    addStream(nearWeb(f.near), mats.near, 2, mats.nearHaze);
     addStream(farWeb(f.far), mats.far, 1);
     addPts(buildNeighbourhood(f.neigh).build(), mats.neigh, 4);
     const lg = buildLocalGroup(f.lg);
@@ -285,7 +296,7 @@ const factory: LandmarkFactory = () => {
     addPts(lg.mw.build(), mats.mw, 5);
     addPts(lg.mwDust.build(), mats.mwDust, 6);
     addPts(lg.far.build(), mats.lgFar, 4);
-    const sl = buildStreamlines(q === 'low' ? 70 : q === 'medium' ? 110 : 150);
+    const sl = buildStreamlines(q === 'low' ? 50 : q === 'medium' ? 80 : 110);
     const fg = new THREE.BufferGeometry();
     fg.setAttribute('position', new THREE.BufferAttribute(sl.pos, 3));
     fg.setAttribute('aT', new THREE.BufferAttribute(sl.t, 1));
@@ -334,6 +345,10 @@ const factory: LandmarkFactory = () => {
         m.uniforms.uCap.value = cap;
         m.uniforms.uCamDist.value = camDist;
       }
+      // haze sprites are meant to be big and soft
+      const hazeCap = Math.min(maxPoint * 0.5, 12 * dpr); // big (close) haze sprites dissolve instead of reading as blobs
+      mats.localHaze.uniforms.uCap.value = hazeCap;
+      mats.nearHaze.uniforms.uCap.value = hazeCap;
 
       // Local Group (and the Milky Way proxy, which takes over as the real Milky Way scene fades)
       const lgA = 1 - smooth(-2.9, -2.2, z);
@@ -348,16 +363,22 @@ const factory: LandmarkFactory = () => {
       // a soft ball around us, about the size of the view: only a few voids deep, so the web reads
       const V = 10 ** z;
       const focus = 1.3 * V;
-      const deep = 1 + 1e6 * (1 - smooth(-3.3, -2.6, z)); // deep in: show everything as a backdrop
+      const deep = 1 + 1e6 * (1 - smooth(-3.9, -3.2, z)); // deep in: show everything as a backdrop
       // the neighbourhood: real groups and clusters
-      setPop(mats.neigh, { alpha: 1 - smooth(-2.6, -1.7, z), gain: 2.5, focus: focus * deep });
+      setPop(mats.neigh, { alpha: 1 - smooth(-2.5, -1.9, z), gain: 1.0, focus: focus * deep });
       // procedural web, three nested populations
-      setPop(mats.local, { alpha: (1 - smooth(-1.8, -1.1, z)) * Math.sqrt(sparse.local), gain: 10 * sparse.local, sizeK: Math.sqrt(sparse.local), focus: focus * deep, drift: 6 });
-      setPop(mats.near, { alpha: smooth(-3.0, -2.3, z) * (1 - smooth(-1.35, -0.75, z)) * Math.sqrt(sparse.near), gain: 60 * sparse.near, sizeK: 2 * Math.sqrt(sparse.near), focus, drift: 3, pow: 1.5 });
-      setPop(mats.far, { alpha: smooth(-1.75, -1.05, z) * Math.sqrt(sparse.far), gain: 6 * sparse.far, sizeK: 14, focus, drift: 18, pow: 1.4 });
+      const localA = (1 - smooth(-2.3, -1.65, z)) * Math.sqrt(sparse.local);
+      const nearA = smooth(-2.9, -2.3, z) * (1 - smooth(-1.45, -0.95, z)) * THREE.MathUtils.lerp(1, 0.5, smooth(-1.75, -1.3, z)) * Math.sqrt(sparse.near);
+      const localPow = THREE.MathUtils.lerp(2, 1, smooth(-3.6, -2.8, z)); // deep in: physical fall-off for the backdrop
+      setPop(mats.local, { alpha: localA, gain: 4 * sparse.local, sizeK: Math.sqrt(sparse.local), focus: focus * deep, drift: 6, pow: localPow });
+      setPop(mats.near, { alpha: nearA, gain: 14 * sparse.near, sizeK: 2 * Math.sqrt(sparse.near), focus: focus * THREE.MathUtils.lerp(0.75, 0.55, smooth(-1.75, -1.3, z)), drift: 3, pow: 0.8 });
+      // diffuse glow along the skeleton: the combined light of countless faint galaxies
+      setPop(mats.localHaze, { alpha: 0.06 * smooth(-3.1, -2.5, z) * (1 - smooth(-2.3, -1.65, z)), focus });
+      setPop(mats.nearHaze, { alpha: 0.3 * nearA / Math.sqrt(sparse.near), focus: focus * 0.75 });
+      setPop(mats.far, { alpha: smooth(-1.6, -1.05, z) * Math.sqrt(sparse.far), gain: 6 * sparse.far, sizeK: 14, focus, drift: 18, pow: 1.4 });
 
       flowMat.uniforms.uTime.value = frame.time;
-      flowMat.uniforms.uA.value = smooth(-3.3, -2.8, z) * (1 - smooth(-2.6, -2.15, z));
+      flowMat.uniforms.uA.value = 0.45 * smooth(-3.3, -2.8, z) * (1 - smooth(-2.6, -2.2, z));
       ringMat.uniforms.uDpr.value = dpr;
       ringMat.uniforms.uA.value = smooth(-3.6, -3.1, z) * 0.75;
 
