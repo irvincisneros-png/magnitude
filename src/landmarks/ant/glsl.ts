@@ -119,18 +119,12 @@ vec3 bumpN(vec3 n, vec3 wp, float h) {
   float l = length(b);
   return (l > 1e-30 && !isnan(l)) ? b / l : n;
 }
-/** Cellular microsculpture: ridges between cells of size c (mm). Returns 0 in cell centres … 1 on ridges. */
+/** Reticulate microsculpture: a continuous network of fine ridges, cells about c mm across. */
 float cells(vec3 p, float c) {
   vec3 q = p / c;
-  vec3 i = floor(q), f = fract(q);
-  float d1 = 9.0, d2 = 9.0;
-  for (int z = 0; z <= 1; z++) for (int y = 0; y <= 1; y++) for (int x = 0; x <= 1; x++) {
-    vec3 g = vec3(float(x), float(y), float(z)) - (1.0 - step(0.5, f));
-    vec3 o = g + hash33(i + g) * 0.8 + 0.1 - f;
-    float d = dot(o, o);
-    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
-  }
-  return 1.0 - smoothstep(0.0, 0.35, sqrt(d2) - sqrt(d1));
+  float r = 1.0 - abs(2.0 * vnoise3(q) - 1.0);
+  float r2 = 1.0 - abs(2.0 * vnoise3(q * 1.9 + 11.0) - 1.0);
+  return r * r * r * 0.7 + r2 * r2 * r2 * 0.3;
 }
 vec4 hexCell(vec2 p) {
   const vec2 s = vec2(1.0, 1.7320508);
@@ -155,7 +149,7 @@ void main() {
   #elif defined(PART_MAND)
   // reddish-brown blade, the toothed margin darker
   float edge = smoothstep(-0.1, -0.165, o.z) + smoothstep(0.3, 0.37, o.x);
-  vec3 alb = mix(vec3(0.085, 0.037, 0.014), vec3(0.03, 0.014, 0.008), clamp(edge, 0.0, 1.0));
+  vec3 alb = mix(vec3(0.05, 0.022, 0.009), vec3(0.018, 0.009, 0.005), clamp(edge, 0.0, 1.0));
   float rough = 0.3;
   float sheen = 0.0;
   #elif defined(APPENDAGE)
@@ -167,27 +161,27 @@ void main() {
   float rough = 0.36;
   float sheen = 0.6;
   #endif
-  alb *= 0.85 + 0.3 * vAttr.w * 0.5 + 0.15 * vnoise3(o * 9.0);
+  alb *= (0.85 + 0.15 * vAttr.w + 0.15 * vnoise3(o * 9.0)) * 0.6;
 
   // ---- micro relief (fades out once smaller than a pixel)
   float h = 0.0;
   #if defined(PART_GASTER)
   {
     // imbricate (scale-like) transverse microsculpture and the pits the hairs grow from
-    float w = 1.0 - smoothstep(0.003, 0.009, fp);
+    float w = 1.0 - smoothstep(0.0015, 0.004, fp);
     if (w > 0.0) {
       float ln = sin(o.x / 0.0065 * 6.2832 + vnoise3(o * 60.0) * 4.0) * 0.5 + 0.5;
-      h += ln * 0.0012 * w;
+      h += ln * 0.0005 * w;
     }
   }
   #elif defined(APPENDAGE)
   {
-    float w = 1.0 - smoothstep(0.002, 0.007, fp);
-    if (w > 0.0) h += (vnoise3(vec3(o.x * 80.0, o.y * 900.0, o.z * 900.0)) - 0.5) * 0.0012 * w;
+    float w = 1.0 - smoothstep(0.0012, 0.0035, fp);
+    if (w > 0.0) h += (vnoise3(vec3(o.x * 80.0, o.y * 900.0, o.z * 900.0)) - 0.5) * 0.0005 * w;
   }
   #elif defined(PART_MAND)
   {
-    float w = 1.0 - smoothstep(0.002, 0.007, fp);
+    float w = 1.0 - smoothstep(0.0012, 0.0035, fp);
     if (w > 0.0) h += sin((o.x * 0.8 - o.z) / 0.006 * 6.2832) * 0.0006 * w; // fine longitudinal striae
   }
   #else
@@ -195,7 +189,7 @@ void main() {
     // dense reticulate microsculpture on the head and mesosoma
     float c = 0.014;
     float w = 1.0 - smoothstep(c * 0.25, c * 0.7, fp);
-    if (w > 0.0) h += cells(o, c) * 0.0016 * w;
+    if (w > 0.0) h += cells(o, c) * 0.0006 * w;
   }
   #endif
   // the membranes are soft and wrinkled
@@ -220,10 +214,10 @@ void main() {
       float wf = 1.0 - smoothstep(fs * 0.25, fs * 0.8, fp);
       vec2 off = hc.xy;
       float r = length(off);
-      vec3 nObj = normalize(vNObj + vec3(off.x, off.y, 0.0) * 1.1 * wf * eye);
+      vec3 nObj = normalize(vNObj + vec3(off.x, off.y, 0.0) * 1.6 * wf * eye);
       N = normalize(mat3(modelMatrix) * nObj);
       float rnd = hash13(vec3(hc.zw, 3.0));
-      vec3 eyeAlb = vec3(0.03, 0.028, 0.026) * (0.7 + 0.6 * rnd);
+      vec3 eyeAlb = vec3(0.012, 0.011, 0.011) * (0.7 + 0.6 * rnd);
       float border = smoothstep(0.38, 0.5, r) * wf;
       eyeAlb = mix(eyeAlb, vec3(0.008, 0.006, 0.005), border);
       alb = mix(alb, eyeAlb, eye);
@@ -251,10 +245,10 @@ void main() {
   float k = a * 0.5;
   float G = (nv / (nv * (1.0 - k) + k)) * (max(ndl, 0.0) / (max(ndl, 0.0) * (1.0 - k) + k));
   vec3 spec = uSunCol * F * ggxD(nh, a) * G / (4.0 * nv + 1e-3) * sh;
-  col += min(spec, vec3(40.0));
+  col += min(spec, vec3(12.0));
   float Fe = 0.045 + 0.955 * pow(1.0 - nv, 5.0) * (1.0 - rough * 0.6);
   vec3 R = reflect(-V, N);
-  col += envCol(R) * Fe * mix(1.0, 0.55, rough) * (0.35 + 0.65 * ao);
+  col += envCol(R) * vec3(0.85, 0.85, 0.95) * Fe * mix(1.0, 0.5, rough) * (0.35 + 0.65 * ao) * (1.0 - 0.45 * eye);
   // silky pubescence: a soft pale sheen at grazing angles (the hairs themselves are drawn separately)
   col += vec3(0.42, 0.38, 0.32) * sheen * pow(1.0 - nv, 3.0) * (skyIrr(N) * 0.25 + uSunCol * max(ndl, 0.0) * sh * 0.05) * ao;
   // translucency: thin chitin glows amber when the sun is behind it
@@ -312,7 +306,7 @@ void main() {
 
 export const hairFrag = /* glsl */ `
 ${COMMON}
-uniform float uFade;
+uniform vec2 uFade;
 varying vec3 vP; varying vec3 vT; varying vec3 vS; varying vec3 vB; varying float vSide; varying float vU; varying float vA; varying float vSh; varying float vKind;
 void main() {
   float sd = vSide;
@@ -321,7 +315,7 @@ void main() {
   if (dot(n, v) < 0.0) n = -n;
   vec3 L = uSun;
   vec3 T = normalize(vT);
-  vec3 alb = vKind > 0.5 ? vec3(0.2, 0.14, 0.075) : vec3(0.3, 0.26, 0.2);
+  vec3 alb = vKind > 0.5 ? vec3(0.13, 0.09, 0.05) : vec3(0.075, 0.062, 0.048);
   alb *= mix(0.8, 1.15, vU);
   float sh = vSh;
   vec3 col = alb * uSunCol * clamp(dot(n, L) * 0.5 + 0.5, 0.0, 1.0) * sh * 0.8 + alb * skyIrr(n) * 1.1;
@@ -331,11 +325,12 @@ void main() {
   vec3 T2 = normalize(T + n * 0.15);
   float th2 = dot(T2, h);
   float s2 = pow(sqrt(max(1.0 - th2 * th2, 1e-12)), 20.0);
-  col += uSunCol * (s1 * 0.35 + s2 * vec3(0.5, 0.36, 0.2) * 0.25) * sh;
+  col += uSunCol * (s1 * 0.16 + s2 * vec3(0.5, 0.36, 0.2) * 0.12) * sh * (vKind > 0.5 ? 1.0 : 0.35);
   // sunlight through the hair when back-lit: the golden halo of macro photographs
   col += uSunCol * vec3(0.85, 0.6, 0.32) * pow(max(dot(v, -L), 0.0), 4.0) * 0.45 * sh;
   float edge = 1.0 - smoothstep(0.7, 1.0, abs(sd));
-  float a = vA * mix(1.0, edge, vA) * uFade * mix(1.0, 0.6, vU);
+  // sub-pixel hairs: coverage falls faster than width so a pelt of them never turns to grey haze
+  float a = vA * sqrt(vA) * mix(1.0, edge, vA) * (vKind > 0.5 ? uFade.y : uFade.x * 0.3) * mix(1.0, 0.6, vU);
   if (a < 0.004) discard;
   gl_FragColor = vec4(col, a);
 }`;
@@ -377,7 +372,7 @@ void main() {
       ao *= 1.0 - 0.9 * clamp(occ * 1.6, 0.0, 1.0);
     }
   }
-  float a = 1.0 - (1.0 - 0.7 * (1.0 - sh)) * ao;
+  float a = 1.0 - (1.0 - 0.78 * (1.0 - sh)) * ao;
   // fade at the edges of the patch
   vec2 e = min(vXZ - uRect.xz, uRect.yw - vXZ);
   a *= smoothstep(0.0, 0.3, min(e.x, e.y));

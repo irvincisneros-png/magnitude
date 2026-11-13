@@ -41,10 +41,13 @@ vec4 groundMap(vec2 xz) {
 /** Skin as seen through or reflected in a grain (blur 0..1: how out of focus). */
 vec3 skinAt(vec2 xz, float blur) {
   vec4 m = groundMap(xz);
-  float pl = vnoise2(xz * 24.0) * 0.6 + vnoise2(xz * 61.0) * 0.4;
-  float fur = smoothstep(0.07, 0.0, abs(vnoise2(xz * 4.2 + 3.0) - 0.5));
+  vec3 alb = vec3(1.0);
   float k = 1.0 - blur;
-  vec3 alb = vec3(1.0) * mix(1.0, 0.86 + 0.26 * pl, k) * (1.0 - 0.3 * fur * k);
+  if (k > 0.01) {
+    float pl = vnoise2(xz * 24.0) * 0.6 + vnoise2(xz * 61.0) * 0.4;
+    float fur = smoothstep(0.07, 0.0, abs(vnoise2(xz * 4.2 + 3.0) - 0.5));
+    alb *= mix(1.0, 0.86 + 0.26 * pl, k) * (1.0 - 0.3 * fur * k);
+  }
   return (uSkinLd * m.a + uSkinLa) * alb + uSkinLd * m.rgb;
 }
 vec3 sunGlow(vec3 d, float sharp) {

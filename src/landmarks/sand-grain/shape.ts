@@ -229,7 +229,7 @@ export function toHalf(val: number) {
 export interface Grid { n: number; B: number; d: Float32Array }
 export interface Baked {
   quartz: MeshData; feldspar: MeshData; heavy: MeshData;
-  grid: Uint16Array; map: Uint16Array;
+  grid: Uint16Array; map: Uint16Array; chips: Uint8Array;
   offsets: { quartz: number; feldspar: number; heavy: number; shell: number };
 }
 
@@ -304,7 +304,7 @@ export function bake(sun: V3, quality: 'low' | 'medium' | 'high'): Baked {
     grid[o * 4] = toHalf(Math.max(-0.4, Math.min(0.4, d)));
     grid[o * 4 + 1] = toHalf(haze(x, y, z));
     grid[o * 4 + 2] = toHalf(stain(x, y, z));
-    grid[o * 4 + 3] = toHalf(1);
+    grid[o * 4 + 3] = toHalf(vnoise(x * 2.2 + 4, y * 2.2, z * 2.2, 12) * 0.75 + vnoise(x * 6 + 1.3, y * 6, z * 6, 13) * 0.25);
   }
   const G: Grid = { n, B, d: gd };
 
@@ -449,5 +449,38 @@ export function bake(sun: V3, quality: 'low' | 'medium' | 'high'): Baked {
     map[i * 4 + 2] = toHalf(Math.min(40, blurred[i * 3 + 2]));
     map[i * 4 + 3] = toHalf(vis[i]);
   }
-  return { quartz, feldspar, heavy, grid, map, offsets };
+  return { quartz, feldspar, heavy, grid, map, offsets, chips: bakeChips() };
+}
+
+/** Tileable Voronoi "chips" texture: CHIP.period cells per axis, CHIP.res texels per axis.
+ *  rgb = the chip's facet tilt (×0.5 + 0.5), a = distance to the chip border (0 on the border). */
+export const CHIP = { period: 8, res: 64 };
+function bakeChips(): Uint8Array {
+  const { period: P, res: N } = CHIP;
+  const pts = new Float32Array(P * P * P * 3);
+  const tilt = new Float32Array(P * P * P * 3);
+  const R = rng(777);
+  for (let i = 0; i < P * P * P; i++) {
+    for (let k = 0; k < 3; k++) { pts[i * 3 + k] = 0.1 + R() * 0.8; tilt[i * 3 + k] = R() * 2 - 1; }
+  }
+  const out = new Uint8Array(N * N * N * 4);
+  const s = P / N;
+  for (let z = 0; z < N; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const qx = (x + 0.5) * s, qy = (y + 0.5) * s, qz = (z + 0.5) * s;
+    const cx = Math.floor(qx), cy = Math.floor(qy), cz = Math.floor(qz);
+    let d1 = 9, d2 = 9, id = 0;
+    for (let dz = -1; dz <= 1; dz++) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const ix = cx + dx, iy = cy + dy, iz = cz + dz;
+      const w = ((ix + P) % P) + P * (((iy + P) % P) + P * ((iz + P) % P));
+      const px = ix + pts[w * 3], py = iy + pts[w * 3 + 1], pz = iz + pts[w * 3 + 2];
+      const d = Math.hypot(qx - px, qy - py, qz - pz);
+      if (d < d1) { d2 = d1; d1 = d; id = w; } else if (d < d2) d2 = d;
+    }
+    const o = (x + N * (y + N * z)) * 4;
+    out[o] = Math.round((tilt[id * 3] * 0.5 + 0.5) * 255);
+    out[o + 1] = Math.round((tilt[id * 3 + 1] * 0.5 + 0.5) * 255);
+    out[o + 2] = Math.round((tilt[id * 3 + 2] * 0.5 + 0.5) * 255);
+    out[o + 3] = Math.round(Math.min(1, (d2 - d1) / 0.12) * 255);
+  }
+  return out;
 }

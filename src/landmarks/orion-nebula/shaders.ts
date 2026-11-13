@@ -75,8 +75,8 @@ export const vert = /* glsl */ `
       float back = smoothstep(0.1, -0.7, dot(toT, toC));
       mv.xy += (corner.x * u * su + corner.y * v) * R;
       gl_Position = projectionMatrix * mv;
-      vEmit = (d2.rgb + d3.rgb * (0.25 * back)) * (uGain * fade);
-      vRim = d3.rgb * ((0.5 + 1.6 * back) * uGain * fade);
+      vEmit = (d2.rgb + d3.rgb * (0.05 * back)) * (uGain * fade);
+      vRim = d3.rgb * ((0.3 + 0.5 * back) * uGain * fade);
       vP = vec4(min(d2.a * uDust, 0.97) * fade, d3.w, 0.0, d4.z);
       vN = vec4(fract(seed * 13.7), fract(seed * 29.3), dot(L, u), dot(L, v));
       if (fade < 0.002 || dist <= 0.0) gl_Position = hide;

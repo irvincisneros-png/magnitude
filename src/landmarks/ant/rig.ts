@@ -46,7 +46,7 @@ export class AntRig {
     uPx: { value: 0.001 },
   };
   private uShadowN = { value: MAX_CAPS as number };
-  private uHairFade = { value: 1 };
+  private uHairFade = { value: new THREE.Vector2(1, 1) };
   private mats: THREE.ShaderMaterial[] = [];
   private geos: THREE.BufferGeometry[] = [];
   private nodes = new Map<string, Node>();
@@ -238,8 +238,8 @@ export class AntRig {
 
   /** zoom-dependent switches. */
   setZoom(zoom: number) {
-    const f = 1 - smooth(0.75, 1.15, zoom);
-    this.uHairFade.value = f;
+    const f = 1 - smooth(0.7, 1.05, zoom);
+    this.uHairFade.value.set(1 - smooth(0.1, 0.6, zoom), f);
     for (const n of this.nodes.values()) if (n.hair) n.hair.visible = f > 0.002;
   }
 

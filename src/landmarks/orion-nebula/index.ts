@@ -34,7 +34,7 @@ const meta: LandmarkMeta = {
   lightTime: '24 years to cross',
   timescale:
     'The Trapezium stars are less than a million years old. Their light and winds will blow the nebula apart within a few million years.',
-  post: { bloom: 0.6, exposure: 1.0 },
+  post: { bloom: 0.12, exposure: 1.0 },
   labels: [
     { text: 'Trapezium — four hot young stars that light the nebula', position: toScene(TRAPEZIUM), zoomRange: [-0.75, 0.45] },
     { text: 'Bright Bar', position: toScene(BAR_C), zoomRange: [-0.45, 0.4] },
@@ -177,7 +177,7 @@ const factory: LandmarkFactory = () => {
       u.uTanHalf.value = Math.tan((frame.camera.fov * Math.PI) / 360);
       // zoomed in (inside the cavity), the glow eases in so the Solar System's last views stay readable
       // restrained inside the cavity, full glow from zoom −0.2 on
-      u.uGain.value = 1.1 * (0.08 + 0.92 * smooth(z, -1.25, -0.1) ** 2) * (1 + 0.4 * smooth(z, 0.35, 0.9));
+      u.uGain.value = 1.1 * (0.08 + 0.92 * smooth(z, -1.0, -0.1) ** 2) * (1 + 0.4 * smooth(z, 0.35, 0.9));
       u.uDust.value = 0.55 + 0.45 * smooth(z, -1.1, -0.4);
       u.uStar.value = 0.6 + 0.4 * smooth(z, -1.0, -0.3);
       u.uProp.value = 1 - smooth(z, -0.45, 0.05);

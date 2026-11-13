@@ -62,10 +62,10 @@ const RAMP: [number, V3][] = [
   [0.0, [0.92, 1.0, 0.97]],
   [0.03, [0.66, 1.0, 0.86]],
   [0.06, [1.0, 0.86, 0.74]],
-  [0.1, [1.0, 0.6, 0.55]],
-  [0.16, [1.0, 0.36, 0.44]],
-  [0.27, [0.92, 0.2, 0.38]],
-  [0.5, [0.7, 0.11, 0.3]],
+  [0.1, [1.0, 0.58, 0.5]],
+  [0.16, [1.0, 0.34, 0.38]],
+  [0.27, [0.9, 0.18, 0.26]],
+  [0.5, [0.7, 0.1, 0.2]],
 ];
 export function gasColour(d: number): V3 {
   for (let i = 1; i < RAMP.length; i++) {
@@ -84,9 +84,9 @@ function flux(p: V3, n?: V3): number {
   const d = Math.hypot(p[0], p[1], p[2]) + 1e-6;
   let cosi = 1;
   if (n) cosi = Math.max(0.2, -(n[0] * p[0] + n[1] * p[1] + n[2] * p[2]) / d);
-  const ky = p[1] > 0 ? 1.7 : 0.75;
+  const ky = p[1] > 0 ? 1.25 : 0.75;
   const de = Math.hypot(p[0], p[1] * ky, p[2]);
-  return cosi * (1 / (1 + (de / 0.045) ** 2) + 0.3 / (1 + (de / 0.14) ** 2) + 0.06 / (1 + (de / 0.4) ** 2));
+  return cosi * (0.35 / (1 + (de / 0.04) ** 2) + 0.3 / (1 + (de / 0.14) ** 2) + 0.06 / (1 + (de / 0.4) ** 2));
 }
 
 // ---------------------------------------------------------------- record builder
@@ -153,26 +153,26 @@ export function buildNebula(f: number): Batch {
   // ---- 1. dark molecular cloud behind the bowl: opaque, ragged, silver-lined when backlit -----
   {
     const r = rng(101);
-    for (let i = 0, made = 0; made < n(520) && i < 40000; i++) {
+    for (let i = 0, made = 0; made < n(700) && i < 40000; i++) {
       const x = (r() * 2 - 1) * 0.6, y = (r() * 2 - 1) * 0.9 - 0.05, z = -0.06 - r() * 0.5;
-      const e = (x / 0.42) ** 2 + ((y + 0.05) / 0.72) ** 2 + ((z + 0.28) / 0.26) ** 2;
+      const e = (x / 0.36) ** 2 + ((y + 0.05) / 0.66) ** 2 + ((z + 0.28) / 0.26) ** 2;
       const dn = fbm3(x * 3.1, y * 3.1, z * 3.1);
-      if (e > 1 || r() > (dn - 0.3) * 2.4) continue;
+      if (e > 1 || r() > (dn - 0.25) * 2.6) continue;
       const p: V3 = [x, y, Math.min(z, W(x, y) - 0.04)];
       const rr = Math.hypot(x, y);
       const R = (0.07 + 0.09 * r()) * t.size;
       const glow = flux([x, y, W(x, y)]);
       B.push({
-        p, size: R, abs: t.abs(0.55 + 0.3 * r()), erode: 0.9, seed: r(), rot: r() * 6.28, nscale: 1.1,
+        p, size: R, abs: t.abs(0.72 + 0.23 * r()), erode: 0.85, seed: r(), rot: r() * 6.28, nscale: 1.1,
         emit: scale(BROWN, 0.006 * glow * t.emit),
-        rim: scale(gasColour(Math.max(0.12, rr)), Math.min(0.9, 0.08 + glow * 1.2) * t.emit), group: rr > 0.4 ? 1 : 0,
+        group: rr > 0.4 ? 1 : 0,
       });
       made++;
     }
-    for (let i = 0; i < n(36); i++) {
-      const a = r() * 6.2832, rr = 0.28 * Math.sqrt(r());
+    for (let i = 0; i < n(60); i++) {
+      const a = r() * 6.2832, rr = 0.34 * Math.sqrt(r());
       const x = Math.cos(a) * rr, y = Math.sin(a) * rr * 1.3 - 0.03;
-      B.push({ p: [x, y, W(x, y) - 0.14 - r() * 0.18], size: (0.13 + 0.1 * r()) * t.size, abs: t.abs(0.7), erode: 0.5, seed: r(), rot: r() * 6.28 });
+      B.push({ p: [x, y, W(x, y) - 0.14 - r() * 0.18], size: (0.13 + 0.1 * r()) * t.size, abs: t.abs(0.88), erode: 0.5, seed: r(), rot: r() * 6.28 });
     }
   }
 
@@ -188,14 +188,14 @@ export function buildNebula(f: number): Batch {
       const k = 0.06 * Math.max(0, fbm3(x * 4, y * 4, 1.3) - 0.38) * (1 - sstep(0.45, 0.85, rr)) * t.emit;
       B.push({ p, size: R, emit: scale(gasColour(0.35 + rr * 0.2), k), erode: 0.75, seed: r(), rot: r() * 6.28, nscale: 0.8, group: rr > 0.45 ? 1 : 0 });
     }
-    for (let i = 0; i < n(200); i++) {
+    for (let i = 0; i < n(110); i++) {
       const a = r() * 6.2832, rr = 0.24 + 0.3 * r();
       const x = Math.cos(a) * rr, y = Math.sin(a) * rr - 0.08;
       if (y > 0.05 && x < 0.1 && x > -0.3) continue; // not over the Dark Bay
       const p: V3 = [x, y, W(x, y) + 0.01 + r() * 0.04];
-      const R = (0.025 + 0.04 * r()) * t.size;
+      const R = (0.03 + 0.05 * r()) * t.size;
       if (!clearOf(p, R)) continue;
-      B.push({ p, size: R, emit: scale(jitter(REFLECT, r, 0.2), (0.05 + 0.08 * flux(p)) * t.emit), erode: 0.7, seed: r(), rot: r() * 6.28, nscale: 1.4, group: rr > 0.45 ? 1 : 0 });
+      B.push({ p, size: R, emit: scale(jitter(REFLECT, r, 0.2), (0.008 + 0.02 * flux(p)) * t.emit), erode: 0.45, seed: r(), rot: r() * 6.28, nscale: 1.4, group: rr > 0.45 ? 1 : 0 });
     }
   }
 
@@ -236,6 +236,20 @@ export function buildNebula(f: number): Batch {
     }
   }
 
+  // ---- 3c. the southern fan: textured gas opening away from the Trapezium -------------------
+  {
+    const r = rng(373);
+    for (let i = 0; i < n(800); i++) {
+      const a = -Math.PI / 2 + (r() - 0.5) * 2.3 * (0.6 + 0.4 * r()), rr = 0.04 + 0.32 * Math.pow(r(), 0.85);
+      const x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+      const p: V3 = [x, y, W(x, y) + 0.004 + r() * 0.01];
+      const R = (0.012 + 0.03 * rr) * (0.7 + 0.6 * r()) * t.size;
+      if (!clearOf(p, R)) continue;
+      const F = flux(p, wallNormal(x, y)) * (0.4 + 1.2 * fbm3(x * 9, y * 9, 5.5));
+      B.push({ p, size: R, axis: scale([Math.cos(a), Math.sin(a), 0], 1.4 + r() * 1.2), emit: scale(jitter(gasColour(len(p)), r), F * 0.55 * t.emit), erode: 0.8, seed: r(), nscale: r() < 0.5 ? -0.9 : 1.1 });
+    }
+  }
+
   // ---- 4. mottled fine grain in and around the bright core --------------------------------
   {
     const r = rng(404);
@@ -263,14 +277,14 @@ export function buildNebula(f: number): Batch {
       for (let s = 0; s < 14; s++) {
         curl3(x * 4, y * 4, 0.7, tmp);
         const c0 = Math.hypot(tmp[0], tmp[1]) + 1e-6, rl = Math.hypot(x, y) + 1e-6;
-        const ex = tmp[0] / c0 * 0.6 + x / rl * 0.8, ey = tmp[1] / c0 * 0.6 + y / rl * 0.8;
+        const ex = tmp[0] / c0 * 0.8 + x / rl * 0.4, ey = tmp[1] / c0 * 0.8 + y / rl * 0.4;
         const tl = Math.hypot(ex, ey) + 1e-6;
         const dx = ex / tl, dy = ey / tl;
         x += dx * w * 2.2; y += dy * w * 2.2;
         if (Math.hypot(x - M43_C[0], y - M43_C[1]) < 0.08) break;
         const p: V3 = [x, y, W(x, y) + 0.004];
         if (!clearOf(p, w * 3, 0.02)) continue;
-        const F = flux(p, wallNormal(x, y)) * (0.7 + 0.5 * Math.sin(s * 0.45 + l));
+        const F = flux(p, wallNormal(x, y)) * (0.7 + 0.5 * Math.sin(s * 0.45 + l)) * (1 - 0.6 * sstep(0.25, 0.5, rr));
         const z2 = W(x + dx * 0.01, y + dy * 0.01) - W(x, y);
         const ax: V3 = [dx, dy, z2 * 100];
         B.push({ p, size: w, axis: scale(ax, 3.4 / len(ax)), emit: scale(jitter(gasColour(len(p)), r), F * 1.1 * t.emit), erode: 0.75, seed: r(), nscale: -0.9 });
@@ -298,18 +312,19 @@ export function buildNebula(f: number): Batch {
         // make the normal point away from the Trapezium
         if (nx * b(0) + ny * b(1) < 0) { nx = -nx; ny = -ny; }
         const wig = (fbm3(u * 9, ai, 0) - 0.5) * 0.08;
+        if (fbm3(u * 11, ai * 5.3, 7.1) < 0.4 && r() < 0.7) continue; // break the arc into clumps
         const dust = r() < 0.26;
         const off = dust ? 0.012 + Math.abs(gauss(r)) * 0.02 : -Math.abs(gauss(r)) * (0.015 + 0.035 * u);
         const x = b(0) + nx * (off + wig), y = b(1) + ny * (off + wig);
         const p: V3 = [x, y, W(x, y) + 0.012 + (r() - 0.5) * 0.02];
         const R = (dust ? 0.016 + 0.02 * r() : 0.01 + 0.022 * r()) * t.size;
         if (!clearOf(p, R)) continue;
-        const F = (flux(p) * 0.8 + 0.06) * (0.7 + 0.6 * fbm3(u * 14, ai * 3, 2));
+        const F = (flux(p) * 0.8 + 0.05) * (0.7 + 0.6 * fbm3(u * 14, ai * 3, 2)) * (1 - 0.6 * sstep(0.4, 1.0, u)) * (ai === 3 ? 0.5 : ai === 2 ? 0.6 : 1);
         const c = jitter(gasColour(Math.max(0.14, len(p))), r);
         if (dust) {
-          B.push({ p, size: R, axis: scale([tx / tl, ty / tl, 0], 1.8), abs: t.abs(0.75), emit: scale(BROWN, 0.02 * F * t.emit), rim: scale(c, Math.min(1.2, F * 2.5) * t.emit), erode: 0.95, seed: r(), nscale: 1.2 });
+          B.push({ p, size: R, axis: scale([tx / tl, ty / tl, 0], 1.8), abs: t.abs(0.75), emit: scale(BROWN, 0.02 * F * t.emit), rim: scale(c, Math.min(0.8, F * 1.2) * t.emit), erode: 0.95, seed: r(), nscale: 1.2 });
         } else {
-          B.push({ p, size: R, axis: scale([tx / tl, ty / tl, 0], 1.6 + r() * 1.4), emit: scale(c, F * 0.9 * t.emit), erode: 0.7, seed: r(), nscale: r() < 0.5 ? -0.8 : 0.9 });
+          B.push({ p, size: R, axis: scale([tx / tl, ty / tl, 0], 1.3 + r() * 1.0), emit: scale(c, F * 0.9 * t.emit), erode: 0.7, seed: r(), nscale: r() < 0.5 ? -0.8 : 0.9 });
         }
       }
     }
@@ -326,7 +341,7 @@ export function buildNebula(f: number): Batch {
       const back = -2.2 * s * s - across;
       const p: V3 = [BAR_C[0] + BAR_U[0] * s + toT[0] * back, BAR_C[1] + BAR_U[1] * s + toT[1] * back, BAR_C[2] + (r() - 0.5) * 0.004];
       const taper = 1 - sstep(0.055, 0.088, Math.abs(s));
-      B.push({ p, size: (0.003 + 0.003 * r()) * t.size, axis: scale(BAR_U, 4.5), emit: scale([1.0, 0.72, 0.6], (1.6 + 1.2 * r()) * taper * t.emit), erode: 0.85, seed: r(), nscale: -1.2 });
+      B.push({ p, size: (0.003 + 0.003 * r()) * t.size, axis: scale(BAR_U, 4.5), emit: scale([1.0, 0.72, 0.6], (0.8 + 0.6 * r()) * taper * Math.min(t.emit, 1.3)), erode: 0.85, seed: r(), nscale: -1.2 });
     }
     for (let i = 0; i < n(180); i++) {
       const s = (r() * 2 - 1) * 0.095;
@@ -346,7 +361,9 @@ export function buildNebula(f: number): Batch {
         const u = Math.pow(r(), 0.75);
         const w = wOut + (wTip - wOut) * u;
         const wig = (fbm3(u * 6, base[0] * 9, 4.4) - 0.5) * wOut * 1.0;
-        const off = (r() * 2 - 1) * w * 0.55 + wig;
+        const side = r() * 2 - 1;
+        const off = side * w * 0.55 + wig;
+        const edgeness = Math.max(sstep(0.55, 1.0, Math.abs(side)), sstep(0.8, 1.0, u));
         const x = base[0] + ux * u + nx * off, y = base[1] + uy * u + ny * off;
         const p: V3 = [x, y, W(x, y) + zLift * (1 - 0.5 * u) + (r() - 0.5) * 0.015];
         const R = (w * 0.55 + 0.005) * (0.8 + 0.6 * r()) * t.size;
@@ -354,12 +371,12 @@ export function buildNebula(f: number): Batch {
         const F = flux([x, y, W(x, y)]);
         B.push({
           p, size: R, axis: scale([ux / L, uy / L, 0], 1.3 + r()), abs: t.abs(abs * (0.85 + 0.3 * r())),
-          rim: scale(jitter(gasColour(len(p)), r), Math.min(2.0, F * 2.2 + 0.03) * t.emit),
+          rim: scale(jitter(gasColour(len(p)), r), Math.min(1.2, F * 1.3 + 0.02) * edgeness * t.emit),
           erode: 0.92, seed: r(), rot: r() * 6.28, nscale: 1.0, emit: scale(BROWN, 0.015 * F * t.emit),
         });
       }
     };
-    dark(BAY_OUT, BAY_TIP, 0.13, 0.012, n(520), 0.055, 0.9);
+    dark(BAY_OUT, BAY_TIP, 0.16, 0.012, n(720), 0.055, 0.92);
     dark([-0.21, 0.25], [-0.05, 0.1], 0.06, 0.014, n(130), 0.05, 0.8);          // spur of the bay towards M43
     dark([-0.2, 0.13], [0.12, 0.145], 0.03, 0.022, n(130), 0.045, 0.75);       // lane between M42 and M43
     dark([-0.33, -0.22], [-0.09, -0.075], 0.032, 0.007, n(70), 0.045, 0.85);   // fingers pointing at the Trapezium
@@ -387,12 +404,12 @@ export function buildNebula(f: number): Batch {
       const dl = rad / 0.055;
       const F = (1 / (1 + (dl / 0.4) ** 2)) * (0.6 + 0.8 * fbm3(p[0] * 30, p[1] * 30, 1));
       const c = lerp3([1.0, 0.8, 0.72], [1.0, 0.32, 0.45], sstep(0.1, 0.7, dl));
-      B.push({ p, size: R, emit: scale(jitter(c, r), F * 0.32 * t.emit), erode: 0.75, seed: r(), rot: r() * 6.28, nscale: 0.9 });
+      B.push({ p, size: R, emit: scale(jitter(c, r), F * 0.12 * t.emit), erode: 0.75, seed: r(), rot: r() * 6.28, nscale: 0.9 });
     }
     for (let i = 0; i < n(60); i++) {
       const rad = 0.03 * Math.sqrt(r()), a = r() * 6.2832;
       const p: V3 = [M43_C[0] + Math.cos(a) * rad, M43_C[1] + Math.sin(a) * rad, M43_C[2] + 0.01];
-      B.push({ p, size: (0.012 + 0.01 * r()) * t.size, emit: scale(REFLECT, 0.07 * t.emit), erode: 0.5, seed: r(), rot: r() * 6.28, nscale: 1.2 });
+      B.push({ p, size: (0.012 + 0.01 * r()) * t.size, emit: scale(REFLECT, 0.03 * t.emit), erode: 0.8, seed: r(), rot: r() * 6.28, nscale: 1.2 });
     }
     // dark eastern lane that bends M43 into a comma
     for (let i = 0; i < n(110); i++) {

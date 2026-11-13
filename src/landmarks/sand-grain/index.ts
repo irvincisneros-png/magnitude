@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import type { FrameState, InitContext, Landmark, LandmarkFactory, LandmarkMeta, Quality } from '../../engine/types';
 import { lightUniforms, sunDir } from './light';
 import { envUniforms } from './env';
-import { FELDSPAR_AT, GRID, HEAVY_AT, MAP, QUARTZ_AT, SHELL_AT, type Baked, type MeshData } from './shape';
+import { CHIP, FELDSPAR_AT, GRID, HEAVY_AT, MAP, QUARTZ_AT, SHELL_AT, type Baked, type MeshData } from './shape';
 import { quartzMaterial } from './quartz';
 import { shellGeometry, solidMaterial } from './solids';
 import { Specks } from './specks';
@@ -70,7 +70,7 @@ function createSandGrain(): Landmark {
   const env = envUniforms();
   const light = lightUniforms();
   const shared = { ...light, ...env };
-  const sdfU = { tSdf: { value: null as THREE.Data3DTexture | null }, uB: { value: GRID.B }, uN: { value: GRID.n } };
+  const sdfU = { tSdf: { value: null as THREE.Data3DTexture | null }, uB: { value: GRID.B }, uN: { value: GRID.n }, tChip: { value: null as THREE.Data3DTexture | null } };
   const geos: THREE.BufferGeometry[] = [];
   const mats: THREE.Material[] = [];
   const texs: THREE.Texture[] = [];
@@ -99,7 +99,14 @@ function createSandGrain(): Landmark {
       mapTex.minFilter = mapTex.magFilter = THREE.LinearFilter;
       mapTex.wrapS = mapTex.wrapT = THREE.ClampToEdgeWrapping;
       mapTex.needsUpdate = true;
-      texs.push(sdfTex, mapTex);
+      const chipTex = new THREE.Data3DTexture(b.chips, CHIP.res, CHIP.res, CHIP.res);
+      chipTex.format = THREE.RGBAFormat; chipTex.type = THREE.UnsignedByteType;
+      chipTex.minFilter = chipTex.magFilter = THREE.LinearFilter;
+      chipTex.wrapS = chipTex.wrapT = chipTex.wrapR = THREE.RepeatWrapping;
+      chipTex.unpackAlignment = 1;
+      chipTex.needsUpdate = true;
+      sdfU.tChip.value = chipTex;
+      texs.push(sdfTex, mapTex, chipTex);
       sdfU.tSdf.value = sdfTex;
       env.tMap.value = mapTex;
 
@@ -151,7 +158,8 @@ function createSandGrain(): Landmark {
       if (quartz) {
         const m = quartz.material as THREE.ShaderMaterial;
         m.defines.TIER = tierN(q);
-        m.defines.STEPS = q === 'low' ? 8 : q === 'medium' ? 12 : 16;
+        m.defines.STEPS = q === 'low' ? 6 : q === 'medium' ? 7 : 8;
+        m.defines.STEPMAX = q === 'low' ? '0.2' : '0.17';
         m.needsUpdate = true;
       }
     },

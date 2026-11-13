@@ -157,8 +157,8 @@ export const FUNI_L = FUNI_SEG.reduce((a, b) => a + b, 0);
 export const SCAPE_DIR: V3 = norm([0.46, 0.56, 0.71]);
 export const FUNI_DIR: V3 = norm([0.54, -0.62, 0.56]);
 /** Mandible rest: pitched down relative to the head, opened slightly. */
-export const MAND_PITCH = -0.32;
-export const MAND_OPEN = -0.08; // negative = swung outwards (open)
+export const MAND_PITCH = 0.1;
+export const MAND_OPEN = 0.02; // negative = swung outwards (open)
 
 export interface LegSpec {
   name: 'fore' | 'mid' | 'hind';
@@ -301,7 +301,7 @@ function headSdf(): SDF {
     d = smax(d, -(ell([-0.05, -0.03, 0], [0.09, 0.1, 0.12])(x, y, z)), 0.03);
     for (const p of palps) d = Math.min(d, p(x, y, z));
     // fine relief: a hint of the reticulate microsculpture at mesh scale
-    d += 0.003 * (vnoise(x * 40, y * 40, z * 40) - 0.5);
+    // (no mesh-scale noise: it aliases into sparkling facets; microsculpture is in the shader)
     return d;
   };
 }
@@ -335,7 +335,7 @@ function trunkSdf(): SDF {
     const sp = Math.hypot(x - spir[0], y - spir[1], az - spir[2]);
     d = smin(d, sp - 0.028, 0.015);
     d = smax(d, -(Math.hypot(x - spir[0], y - spir[1], az - spir[2] - 0.022) - 0.016), 0.006);
-    d += 0.003 * (vnoise(x * 36, y * 36, z * 36) - 0.5);
+    // (no mesh-scale noise: it aliases into sparkling facets; microsculpture is in the shader)
     return d;
   };
 }
@@ -364,7 +364,7 @@ function gasterSdf(): SDF {
     d = smin(d, joint(x, y, z), 0.09);
     d = smin(d, acid(x, y, z), 0.05);
     d = smax(d, -(Math.hypot(x + 1.445, y, z) - 0.018), 0.008);
-    d += 0.002 * (vnoise(x * 30, y * 30, z * 30) - 0.5);
+    // (no mesh-scale noise: it aliases into sparkling facets; microsculpture is in the shader)
     return d;
   };
 }
@@ -387,8 +387,8 @@ function mandibleSdf(): SDF {
     for (let i = 0; i < nE; i++) {
       const [ax, az] = P[i], [bx, bz] = P[(i + 1) % nE];
       const ex = bx - ax, ez = bz - az, el = Math.hypot(ex, ez);
-      // outward normal of a counter-clockwise polygon in (x, z)
-      const nx = ez / el, nz = -ex / el;
+      // outward normal (the outline runs clockwise in (x, z))
+      const nx = -ez / el, nz = ex / el;
       d2 = Math.max(d2, (x - ax) * nx + (z - az) * nz);
     }
     // the outer margin is curved: round it off
@@ -396,7 +396,7 @@ function mandibleSdf(): SDF {
     // teeth along the chewing margin (z = -0.17): notches between them
     for (let i = 0; i < teeth.length - 1; i++) {
       const nxp = (teeth[i] + teeth[i + 1]) * 0.5;
-      d2 = smax(d2, -(Math.hypot(x - nxp, z + 0.183) - 0.017 * (1 - i * 0.06)), 0.004);
+      d2 = smax(d2, -(Math.hypot(x - nxp, z + 0.178) - 0.021 * (1 - i * 0.05)), 0.004);
     }
     // apical tooth hooks inward
     d2 = smin(d2, Math.hypot(x - 0.37, z + 0.185) - 0.022, 0.02);
@@ -444,15 +444,15 @@ function funiSdf(): SDF {
 }
 const funiMem = (x: number) => {
   let x0 = 0, m = 0;
-  for (const L of FUNI_SEG) { m = Math.max(m, Math.exp(-(((x - x0) / 0.008) ** 2))); x0 += L; }
-  return m * 0.7;
+  for (const L of FUNI_SEG) { m = Math.max(m, Math.exp(-(((x - x0) / 0.005) ** 2))); x0 += L; }
+  return m * 0.35;
 };
 
 function femurSdf(L: LegSpec): SDF {
   const tro = L.name === 'fore' ? 0.12 : 0.1;
   const a = roundCone([0.0, 0, 0], [tro - 0.02, 0, 0], 0.046, 0.04);
-  const b = roundCone([tro + 0.01, 0, 0], [tro + 0.3 * (L.Lf - tro), 0.004, 0], 0.036, L.name === 'fore' ? 0.062 : 0.056);
-  const c = roundCone([tro + 0.3 * (L.Lf - tro), 0.004, 0], [L.Lf - 0.03, 0, 0], L.name === 'fore' ? 0.062 : 0.056, 0.042);
+  const b = roundCone([tro + 0.01, 0, 0], [tro + 0.3 * (L.Lf - tro), 0.004, 0], 0.036, L.name === 'fore' ? 0.052 : 0.046);
+  const c = roundCone([tro + 0.3 * (L.Lf - tro), 0.004, 0], [L.Lf - 0.03, 0, 0], L.name === 'fore' ? 0.052 : 0.046, 0.042);
   const knee = sphere([L.Lf, 0, 0], 0.036);
   return (x, y, z) => {
     const zz = z / 0.82; // femora are a little flattened
@@ -468,8 +468,8 @@ const femurMem = (L: LegSpec) => {
 };
 
 function tibiaSdf(L: LegSpec): SDF {
-  const shaft = roundCone([0.02, 0, 0], [L.Lt * 0.88, 0, 0], 0.029, 0.04);
-  const end = roundCone([L.Lt * 0.88, 0, 0], [L.Lt - 0.012, 0, 0], 0.04, 0.034);
+  const shaft = roundCone([0.02, 0, 0], [L.Lt * 0.88, 0, 0], 0.025, 0.034);
+  const end = roundCone([L.Lt * 0.88, 0, 0], [L.Lt - 0.012, 0, 0], 0.034, 0.03);
   // spurs at the tip: the fore tibia's curved, comb-edged calcar (used to clean the antennae);
   // a single slim spur on the mid and hind tibiae
   const spur: SDF[] = [];

@@ -26,7 +26,7 @@ const v = (a: number[]) => `vec3(${a.map((x) => x.toFixed(4)).join(', ')})`;
 
 /** GLSL: sun, sky colour (same model as the human scene) and sky irradiance. */
 export const LIGHT_GLSL = /* glsl */ `
-const vec3 uSun = normalize(${v(SUN_DIR)});
+const vec3 uSun = ${v(SUN_DIR)};
 const vec3 uSunCol = ${v(SUN_COLOUR)};
 const vec3 SKIN_ALB = ${v(SKIN_ALBEDO)};
 vec3 skyCol(vec3 d) {
@@ -52,6 +52,6 @@ vec3 skyIrr(vec3 n) {
 /** What a mirror-like surface sees: sky above, the sunlit skin of the hand below. */
 vec3 envCol(vec3 r) {
   vec3 skin = SKIN_ALB * (uSunCol * uSun.y + skyIrr(vec3(0.0, 1.0, 0.0)) * 1.35);
-  return mix(skyCol(r), skin, smoothstep(0.02, -0.12, r.y));
+  return mix(skyCol(r), skin * 0.7, smoothstep(0.02, -0.12, r.y));
 }
 `;
