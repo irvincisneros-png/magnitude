@@ -129,6 +129,7 @@ const factory: LandmarkFactory = () => {
     uRelief: { value: 1 },
     uSlope: { value: 1 },
     uCloudHole: { value: 1 },
+    uSkyDark: { value: 0 },
   };
 
   // ---------------------------------------------------------------- near-field photograph (lazy)
@@ -376,16 +377,21 @@ const factory: LandmarkFactory = () => {
         starMat.uniforms.uDist.value = cam.position.length() * 20 + 1;
         starMat.uniforms.uScale.value = renderer ? renderer.getPixelRatio() : 1;
       }
-      // the near field: the human scene's look (light, sea, haze) hands over to this scene's own by s ≈ 5.2;
-      // its photograph (blurred towards Blue Marble's resolution from s ≈ 3.95) is draped until s ≈ 4.65;
-      // the terrain relief is ray-marched until s ≈ 4.3 and slope-lit until s ≈ 4.95; the clouds over the anchor return over s ≈ 4.2–4.95 (colour-matched to Blue Marble at its edges and from afar)
+      // The near field hands over to this scene's own look in overlapping fades, timed (by measuring the mean
+      // screen brightness along the zoom) so the pull-back from s 3.5 to 5.5 darkens steadily, with no dip:
+      // - the human scene's light, sea and haze: s ≈ 3.5–5.3
+      // - its photograph: blurred towards Blue Marble's resolution over s ≈ 3.95–4.6, faded over s ≈ 4.0–4.6
+      // - terrain relief ray-marched until s ≈ 4.3, slope-lit until s ≈ 4.95
+      // - the clouds over the anchor: back over s ≈ 3.9–5.4, densest cores first (cloudCover)
+      // - the sky: pre-darkened over s ≈ 4.15–5.45 ahead of its own steep darkening towards space
       const z = frame.zoom;
-      uniforms.uLook.value = 1 - THREE.MathUtils.smoothstep(z, -3.35, -1.9);
-      uniforms.uPatch.value = 1 - THREE.MathUtils.smoothstep(z, -2.9, -2.45);
+      uniforms.uLook.value = 1 - THREE.MathUtils.smoothstep(z, -3.6, -1.8);
+      uniforms.uPatch.value = 1 - THREE.MathUtils.smoothstep(z, -3.1, -2.5);
       uniforms.uSoftM.value = 700 * THREE.MathUtils.smoothstep(z, -3.15, -2.5);
       uniforms.uRelief.value = 1 - THREE.MathUtils.smoothstep(z, -3.1, -2.8);
       uniforms.uSlope.value = 1 - THREE.MathUtils.smoothstep(z, -2.7, -2.15);
-      uniforms.uCloudHole.value = 1 - THREE.MathUtils.smoothstep(z, -2.9, -2.15);
+      uniforms.uSkyDark.value = THREE.MathUtils.smoothstep(z, -2.95, -2.25) * (1 - THREE.MathUtils.smoothstep(z, -2.2, -1.65));
+      uniforms.uCloudHole.value = 1 - THREE.MathUtils.smoothstep(z, -3.2, -1.7);
       if (z < ZOOM_PHOTO && aerJson !== null && !aerBusy && aerTries < 3 && (!aerC || midFile(tier) !== (aerM?.size ?? 0))) {
         aerTries++;
         void ensurePhoto().then(() => { if (aerC && midFile(tier) === (aerM?.size ?? 0)) aerTries = 0; });

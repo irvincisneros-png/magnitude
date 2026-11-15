@@ -78,6 +78,7 @@ export const planetFrag = /* glsl */ `
   uniform float uRelief;      // 0..1: ray-march the near terrain's relief (escarpment, headlands)
   uniform float uSlope;       // 0..1: light the near field with the terrain's slopes
   uniform float uCloudHole;   // 0..1: clear sky over the anchor while zoomed in
+  uniform float uSkyDark;     // 0..1: pre-darken the sky ahead of its steep darkening at s ≈ 4.8–5.5
   varying vec3 vDir;
 
   // Mean Blue Marble land albedo ÷ calibrated photo albedo over the photo's land (measured offline, ±11 km).
@@ -231,7 +232,11 @@ export const planetFrag = /* glsl */ `
     }
     #endif
     // zoomed in, a clear sky over the anchor (20–60 km), so the hand-over coast is not veiled
-    if (uCloudHole > 0.0) cov *= mix(1.0, smoothstep(20000.0, 60000.0, length(qm)), uCloudHole);
+    // returning gradually: the densest cores first, thin and small, then growing to the full layer
+    if (uCloudHole > 0.0) {
+      float k = mix(1.0, smoothstep(20000.0, 60000.0, length(qm)), uCloudHole);
+      cov = clamp((cov - (1.0 - k)) / max(k, 0.05), 0.0, 1.0) * mix(0.35, 1.0, k) * step(0.001, k);
+    }
     return clamp(cov, 0.0, 1.0);
   }
 
@@ -608,12 +613,27 @@ export const planetFrag = /* glsl */ `
         // scene's model, which then meets its sky without the blue band the full atmosphere leaves there
         float look = uLook;
         {
-          float od = tg0 * UNIT_M * exp(-0.5 * camM / 1400.0) / 21000.0;
+          // the human scene's haze (1400 m scale height, 21 km at the ground) integrated exactly along the path
+          // from the camera down to the ground: equal to its own estimate (density at mid-height) up to a
+          // couple of km, and it keeps the whole column's haze as the camera rises instead of thinning it away
+          float hk = camM / 1400.0;
+          float od = tg0 * UNIT_M * (hk > 1e-3 ? (1.0 - exp(-hk)) / hk : 1.0) / 21000.0;
           vec3 hz = skyColH(normalize(vec3(rd.x, max(rd.y, 0.015), rd.z))) * 1.05;
           col = mix(col, mix(surf, hz, 1.0 - exp(-od)), look);
         }
-      } else {
-        col = mix(col, skyColH(rd), uLook * (1.0 - smoothstep(8000.0, 30000.0, camM)));
+      }
+    }
+    if (!hitG) {
+      // low in the air: the human scene's pale morning sky, handing over to this scene's own
+      float camM = max(camH, 0.0) * UNIT_M;
+      float wSky = uLook * (1.0 - smoothstep(8000.0, 30000.0, camM));
+      if (wSky > 0.0) col = mix(col, skyColH(rd), wSky);
+      // this scene's sky darkens steeply towards space as the camera climbs past ~15 km (s ≈ 4.8–5.5);
+      // ease into that a little earlier so the zoom-out darkens steadily instead of in one step
+      // (most towards the zenith, where space shows first)
+      if (uSkyDark > 0.0) {
+        float elev = dot(rd, normalize(ro + vec3(0.0, R_E, 0.0)));
+        col *= mix(vec3(1.0), vec3(0.42, 0.52, 0.72), uSkyDark * mix(0.35, 1.0, smoothstep(-0.02, 0.3, elev)));
       }
     }
     float alpha = hitG ? 1.0 : clamp(1.0 - dot(T, vec3(0.333)) * (1.0 - alphaSurf) + 0.0, 0.0, 1.0);
