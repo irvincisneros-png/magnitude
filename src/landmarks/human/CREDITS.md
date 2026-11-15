@@ -1,8 +1,9 @@
 # Human landmark — data credits
 
 The place in this scene is the real Woonona Beach, Woonona NSW 2517 (northern Wollongong), built at
-true scale from open data by `tools/build-woonona.mjs`. Everything is authored procedurally from the
-data: no photographs, satellite imagery or AI-generated images are used.
+true scale from open data by `tools/build-woonona.mjs`. The place is authored procedurally from the
+data: no photographs, satellite imagery or AI-generated images are used. The only photographic
+textures are those of the person (a scanned-and-textured avatar, see "The person" below).
 
 ## Map data — OpenStreetMap
 
@@ -53,8 +54,18 @@ https://www.openstreetmap.org/copyright
 
 ## The person
 
-The figure (`figure2/`, assets in `public/assets/human/figure/`) is derived from the MakeHuman base
-mesh, skeleton and skinning weights, released under CC0 1.0 by the MakeHuman project; see
-`figure2/CREDITS.md` for the exact files and commit. Pose, clothing, hat and shading are original work.
+The man is the **Microsoft Rocketbox** avatar `Male_Adult_01` (rigged mesh and photo textures),
+released under the **MIT License**, Copyright (c) 2020 Microsoft.
+
+- Source: https://github.com/microsoft/Microsoft-Rocketbox — `Assets/Avatars/Adults/Male_Adult_01/`
+  (`Export/Male_Adult_01.fbx`; `Textures/m002_body_color.tga`, `m002_body_normal.tga`,
+  `m002_body_specular.tga`, `m002_head_color.tga`, `m002_head_normal.tga`, `m002_head_specular.tga`,
+  `m002_opacity_color.tga`), downloaded 15 November 2026.
+- Licence: MIT (the repository's `LICENSE.md`). The full licence text is in `figure2/CREDITS.md`.
+- What we changed: posed (standing on his left leg, right forearm held out level, palm down, head
+  bowed looking at the back of his right hand), baked into static geometry, rescaled to 1.70 m,
+  ambient occlusion baked, textures resized and re-encoded: `tools/build-figure.py` (Blender) and
+  `tools/build-figure-tex.py`. Assets: `public/assets/human/figure/`; shading: `figure2/`.
+
 The close-up hairs on the back of the hand are generated in `hairs.ts` on an ellipsoid fitted to the
-figure's skin curvature at the hand (pose.ts).
+figure's skin curvature at the hand (pose.ts, figureData.ts).

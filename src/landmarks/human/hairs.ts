@@ -32,7 +32,7 @@ export function makeHairs(): Float32Array {
   const [a, b, c] = PALM;
   const g = FOLLICLE;
   const out: number[] = [];
-  for (let iz = Math.floor(-0.021 / g); iz <= Math.ceil(0.021 / g); iz++) for (let ix = Math.floor(-0.05 / g); ix <= Math.ceil(0.045 / g); ix++) {
+  for (let iz = Math.floor(-0.021 / g); iz <= Math.ceil(0.021 / g); iz++) for (let ix = Math.floor(-0.042 / g); ix <= Math.ceil(0.034 / g); ix++) { // (the wrist rises and the knuckles drop away from the fitted ellipsoid beyond these)
     const [jx, jz] = pcg2d(ix, iz);
     const [k1, k2] = pcg2d(ix + 7919, iz - 104729);
     const lx = (ix + 0.15 + 0.7 * jx) * g, lz = (iz + 0.15 + 0.7 * jz) * g;

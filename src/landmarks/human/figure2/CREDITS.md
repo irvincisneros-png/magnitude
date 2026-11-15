@@ -1,27 +1,55 @@
 # Figure2 sources and licence
 
-The person's body is derived from the MakeHuman base mesh, skeleton, skinning weights and macro
-targets, released under **CC0 1.0 Universal** (public domain dedication) by the MakeHuman project.
+The person is the **Microsoft Rocketbox** avatar `Male_Adult_01`: a rigged mesh (FBX, "Bip01"
+skeleton) with photographic colour, normal, specular and opacity (hair card) textures.
 
-- Repository: https://github.com/makehumancommunity/makehuman
-- Commit: `a8bc2d54ff0ac92e78ff71431b1023eda42bf482` (branch `master`, fetched 2026-11-13)
-- Licence: `LICENSE.md` section C ("The license for the bundled assets": base mesh, proxies, targets,
-  skeletons … "released under CC0 1.0 Universal") and the full CC0 text in `LICENSE.ASSETS.md`.
-  Each file also carries its own header ("This asset was explicitly released as CC0 in september 2020";
-  `default.mhskel` and `default_weights.mhw` have `"license": "CC0"`).
+- Repository: https://github.com/microsoft/Microsoft-Rocketbox
+- Folder: `Assets/Avatars/Adults/Male_Adult_01/` (`Export/Male_Adult_01.fbx`, `Textures/m002_*.tga`)
+- Downloaded: 15 November 2026
+- Licence: MIT (below)
 
-Files used (raw URLs at that commit, `https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/…`):
+## How it was made
 
-| File | Use |
-| --- | --- |
-| `makehuman/data/3dobjs/base.obj` (hm08 base mesh) | body surface (group `body`), eyeballs (`helper-r-eye`, `helper-l-eye`); all other helper and joint groups dropped |
-| `makehuman/data/rigs/default.mhskel` | default skeleton (163 bones; joint positions from vertex groups) |
-| `makehuman/data/rigs/default_weights.mhw` | skinning weights (dual-quaternion skinning, 4 influences) |
-| `makehuman/data/targets/macrodetails/{caucasian,african,asian}-{male,female}-young.target` | macro shape: gender 0.85, age 25, mixed ancestry |
-| `makehuman/data/targets/macrodetails/universal-{male,female}-young-averagemuscle-maxweight.target` | weight 0.66 (slightly above MakeHuman's average) |
+1. `tools/build-figure.py` (Blender 5.1, run headless) poses the skeleton — weight on the left leg,
+   right forearm held level in front with the palm down, fingers relaxed, head bowed looking at the
+   back of the right hand, left arm relaxed — evaluates the skinning (dual quaternion, corrective
+   smooth on the joints), bakes the pose into static geometry (subdivided once for the high tier),
+   bakes ambient occlusion with a ground plane (Cycles), scales him to 1.70 m standing height, levels
+   the back of the right hand so its surface normal at the anchor is exactly up, moves the anchor to
+   the origin, and writes `figure_high.bin`, `figure_low.bin`, `figure.json` and
+   `src/landmarks/human/figureData.ts`.
+2. `tools/build-figure-tex.py` (Python + Pillow + numpy) pads the UV gutters, resizes the textures to
+   2048² and 1024², packs normal XY + specular, derives a skin/cloth mask, and writes JPG/WebP/PNG.
 
-Everything else (pose, clothing, straw hat, sunglasses, hair shell, AO/thickness bake, shaders) is
-original work in `tools/build-figure.mjs` and this folder. No textures or images are used.
+Rebuild (from the repo root; `<rb>` holds the FBX and the `m002_*.tga` textures):
 
-Rebuild: download the files above into a folder `<dir>` (targets into `<dir>/targets/`) and run
-`node tools/build-figure.mjs <dir>` → `public/assets/human/figure/`.
+```
+/Applications/Blender.app/Contents/MacOS/Blender -b --factory-startup -P tools/build-figure.py -- <rb> public/assets/human/figure
+python3 -I tools/build-figure-tex.py <rb> public/assets/human/figure
+```
+
+The shading (`shaders.ts`) is original work.
+
+## Licence (MIT, from the repository's LICENSE.md)
+
+MIT License
+
+Copyright (c) 2020 Microsoft
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

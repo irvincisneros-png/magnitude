@@ -72,13 +72,14 @@ function createHuman(): Landmark {
   scene.add(root);
   const shared = makeShared();
   const sky = new Sky(shared);
-  // the person (figure2/: baked from the CC0 MakeHuman mesh), in scene units, turned to look along the beach.
-  // COMMON's skyIrr is renamed in the figure's shaders, which bring their own.
+  // the person (figure2/: the Microsoft Rocketbox avatar, posed and baked offline), in scene units,
+  // turned to face along the beach. COMMON's skyIrr is renamed in the figure's shaders, which bring their own.
   const figure = new Figure2({
     prelude: '\n#define skyIrr humanSkyIrr\n' + COMMON + '\n#undef skyIrr\nLOGZ_VARY\n',
     vertexOutro: 'LOGZ_VERT(mv)',
-    // glints on the sunglasses can be sub-pixel and extreme from afar: keep them from blooming into a halo
-    fragmentOutro: `col = min(col, vec3(4.0)); col = aerial(col, wp * ${UNIT.toFixed(2)}); LOGZ_FRAG`,
+    // specular glints can be sub-pixel and extreme from afar: keep them from blooming into a halo
+    fragmentOutro: `col = min(col, vec3(4.0)); col = aerial(col, wp * ${UNIT.toFixed(2)});`,
+    fragmentEnd: 'LOGZ_FRAG',
     uniforms: shared as unknown as Record<string, THREE.IUniform>,
   });
   figure.setYaw(FIG_YAW);
@@ -124,7 +125,7 @@ function createHuman(): Landmark {
       // the person's mesh streams in meanwhile; it appears when ready
       void figure.load((p) => ctx.assetUrl(p.replace(/^human\//, ''))).then((info) => {
         if (disposed) return;
-        if (Math.abs(info.groundY - FIG.groundY) > 1e-3 || Math.abs(info.feet[0] - FIG.feet[0]) > 1e-3) console.warn('[human] figure.json changed: update pose.ts');
+        if (Math.abs(info.groundY - FIG.groundY) > 1e-3 || Math.abs(info.feet[0] - FIG.feet[0]) > 1e-3) console.warn('[human] figure.json and figureData.ts differ: re-run tools/build-figure.py');
         const top = rotY([info.headTop.x, Math.max(info.headTop.y, 0), info.headTop.z]);
         const L = meta.labels!;
         L[3].position = [top[0], top[1] + 0.05, top[2]];
