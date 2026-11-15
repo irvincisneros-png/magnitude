@@ -8,7 +8,8 @@ Writes into <out_dir> (public/assets/human/figure/), per tier (2048 'h', 1024 'l
   body_{h,l}.jpg, head_{h,l}.jpg   colour (sRGB), UV-island gutters padded so mipmaps don't bleed black
   hairc_{h,l}.webp                 hair cards: colour + opacity in alpha
   bodyn_{h,l}.jpg, headn_{h,l}.jpg tangent-space normal XY in RG (Z is rebuilt), specular level in B
-  mask.png (512²)                  R: bare skin on the body texture, G: bare skin on the head texture
+  mask.png (512²)                  R: bare skin on the body texture, G: bare skin on the head texture,
+                                   B: the hair painted on the head texture (the scalp under the cards)
 Needs Pillow and numpy.
 """
 import os
@@ -63,7 +64,15 @@ def skin_mask(rgb):
 
 
 def save(img, name, size, **kw):
-    img.resize((size, size), Image.LANCZOS).save(os.path.join(OUT, name), **kw)
+    if img.mode == 'RGBA':
+        # resize colour and alpha apart: Pillow resizes RGBA premultiplied, which blackens the padded
+        # colour under alpha 0 (and the mipmaps then fringe the cards' edges)
+        rgb = img.convert('RGB').resize((size, size), Image.LANCZOS)
+        rgb.putalpha(img.split()[3].resize((size, size), Image.LANCZOS))
+        img = rgb
+    else:
+        img = img.resize((size, size), Image.LANCZOS)
+    img.save(os.path.join(OUT, name), **kw)
 
 
 body = load('m002_body_color.tga')
@@ -74,14 +83,24 @@ for tag, size in (('h', 2048), ('l', 1024)):
     save(body_p, f'body_{tag}.jpg', size, quality=88, optimize=True, progressive=True)
     save(head_p, f'head_{tag}.jpg', size, quality=88, optimize=True, progressive=True)
 
-# hair cards: colour padded under the opacity so the soft edges of the strands don't fringe dark
+# hair cards: colour padded under the opacity so the soft edges of the strands don't fringe (the
+# source's semi-transparent fringe texels carry a pale matte colour: only near-solid strands are kept)
 hair = load('m002_opacity_color.tga', 'RGBA')
 alpha = hair.split()[3]
-hc = pad(hair.convert('RGB'), alpha.point(lambda a: 255 if a > 40 else 0))
+hc = pad(hair.convert('RGB'), alpha.point(lambda a: 255 if a > 170 else 0))
+# feather the cards' straight cut edges (the roots, seen as hard lines from above): close the strands
+# into the card's outline, then fade the alpha over the last ~1% of the texture inside that outline
+# (the strand tips are already soft, they only lose their last few texels)
+poly = alpha.point(lambda a: 255 if a > 40 else 0).filter(ImageFilter.MaxFilter(15)).filter(ImageFilter.MinFilter(15))
+fb = np.asarray(poly.filter(ImageFilter.GaussianBlur(10)), dtype=np.float32) / 255.0
+feather = np.clip((fb - 0.5) / 0.45, 0, 1)
+feather = feather * feather * (3 - 2 * feather)
+alpha = Image.fromarray((np.asarray(alpha, dtype=np.float32) * feather).round().astype(np.uint8))
 hrgba = hc.copy()
 hrgba.putalpha(alpha)
 for tag, size in (('h', 2048), ('l', 1024)):
-    save(hrgba, f'hairc_{tag}.webp', size, quality=88, method=6)
+    # exact: keep the padded colour under alpha 0 (WebP otherwise blackens it, and the mipmaps fringe)
+    save(hrgba, f'hairc_{tag}.webp', size, quality=88, method=6, exact=True)
 
 # normal maps: XY in RG, specular level in B
 for part, nfile, sfile, cov in (('body', 'm002_body_normal.tga', 'm002_body_specular.tga', cov_b), ('head', 'm002_head_normal.tga', 'm002_head_specular.tga', cov_h)):
@@ -93,9 +112,22 @@ for part, nfile, sfile, cov in (('body', 'm002_body_normal.tga', 'm002_body_spec
     for tag, size in (('h', 2048), ('l', 1024)):
         save(img, f'{part}n_{tag}.jpg', size, quality=90, optimize=True)
 
+
+
+def hair_mask(rgb, skin):
+    """The dark hair painted on the head texture (top half), minus the face (skin with its holes closed)."""
+    v = np.asarray(rgb.convert('HSV'), dtype=np.float32)[..., 2] / 255.0
+    rows = (np.arange(v.shape[0]) / v.shape[0] < 0.5)[:, None]
+    m = Image.fromarray((np.clip((0.42 - v) / 0.12, 0, 1) * rows * 255).astype(np.uint8))
+    m = m.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.MinFilter(9)).filter(ImageFilter.MinFilter(15)).filter(ImageFilter.MaxFilter(15))
+    face = skin.filter(ImageFilter.MaxFilter(41)).filter(ImageFilter.MinFilter(41))
+    m = np.asarray(m, dtype=np.float32) * (1 - np.asarray(face, dtype=np.float32) / 255.0)
+    return Image.fromarray(m.astype(np.uint8)).filter(ImageFilter.GaussianBlur(4))
+
+
 mb = skin_mask(body)
 mh = skin_mask(head)
-mask = Image.merge('RGB', (mb, mh, Image.new('L', mb.size, 0)))
+mask = Image.merge('RGB', (mb, mh, hair_mask(head, mh)))
 mask = pad(mask, Image.fromarray(np.maximum(np.asarray(cov_b), np.asarray(cov_h))))
 mask.resize((512, 512), Image.LANCZOS).save(os.path.join(OUT, 'mask.png'), optimize=True)
 for f in sorted(os.listdir(OUT)):

@@ -87,6 +87,14 @@ fig.load((p) => `./assets/${p}`).then((info) => {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200).rotateX(-Math.PI / 2), groundMat);
   ground.position.y = info.groundY;
   scene.add(ground);
+  // debug: hide=hair|head|blend (drop the hair cards / the head shell / the cards' blended soft ends)
+  const hide = qs.get('hide');
+  if (hide) for (const c of fig.group.children) {
+    const r = c.renderOrder, hair = r === 1 || r === 9;
+    if ((hide === 'hair' && hair) || (hide === 'head' && !hair) || (hide === 'blend' && r === 9)) c.visible = false;
+  }
+  // debug: a2c=0 turns the hair cards' alpha-to-coverage off
+  if (qs.get('a2c') === '0') for (const c of fig.group.children) ((c as THREE.Mesh).material as THREE.Material).alphaToCoverage = false;
   (window as unknown as { __fig2: unknown }).__fig2 = { ready: true, info };
   hud.textContent = `ground ${info.groundY.toFixed(3)}  feet ${info.feet.map((v) => v.toFixed(3)).join(' ')}`;
 });

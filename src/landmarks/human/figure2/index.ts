@@ -122,6 +122,8 @@ export class Figure2 {
       uF2ShadowTexel: { value: 0.002 }, uF2ShadowR: { value: 1 },
       uF2Rot: { value: new THREE.Matrix3() },
       uF2SkinTone: { value: 1.0 },
+      uF2HeadC: { value: new THREE.Vector3() }, uF2HeadUp: { value: new THREE.Vector3(0, 1, 0) },
+      uF2HandX: { value: new THREE.Vector3(1, 0, 0) }, uF2HandZ: { value: new THREE.Vector3(0, 0, 1) },
     };
     this.group.name = 'figure2';
   }
@@ -143,6 +145,15 @@ export class Figure2 {
       headTop: v3(m.headTop), gaze: v3(m.gaze),
       manifest: m,
     };
+    // the hair volume (centre, up through the crown) and the skin close-up's hand frame (as pose.ts HAND_FRAME, unturned)
+    (this.u.uF2HeadC.value as THREE.Vector3).fromArray(m.headCentre);
+    (this.u.uF2HeadUp.value as THREE.Vector3).fromArray(m.headTop).sub(this.u.uF2HeadC.value as THREE.Vector3).normalize();
+    {
+      const a = (-m.anchorRadii.principalAngleDeg * Math.PI) / 180;
+      const tf = m.anchor.tangentFingers, ta = m.anchor.tangentAcross;
+      const hx = (this.u.uF2HandX.value as THREE.Vector3).set(tf[0] * Math.cos(a) - ta[0] * Math.sin(a), 0, tf[2] * Math.cos(a) - ta[2] * Math.sin(a)).normalize();
+      (this.u.uF2HandZ.value as THREE.Vector3).set(-hx.z, 0, hx.x);
+    }
     await Promise.all([this.ensureGeo(this.geoKey()), this.ensureTex(this.texKey()), this.ensureMask()]);
     if (this.disposed) return this.info;
     this.apply();
@@ -234,7 +245,20 @@ export class Figure2 {
       side: part === 2 ? THREE.DoubleSide : THREE.FrontSide,
       transparent: pass === 'blend',
       depthWrite: pass !== 'blend',
+      // the hair cards' strands: alpha-to-coverage gives soft, depth-correct edges under MSAA
+      alphaToCoverage: part === 2 && pass === 'opaque',
     });
+    if (part === 2) {
+      // never change the target's alpha (the compositor reads it as the layer's coverage): the A2C
+      // pass replaces colour on its covered samples, the soft ends blend colour only
+      m.blending = THREE.CustomBlending;
+      m.blendEquation = THREE.AddEquation;
+      m.blendSrc = pass === 'blend' ? THREE.SrcAlphaFactor : THREE.OneFactor;
+      m.blendDst = pass === 'blend' ? THREE.OneMinusSrcAlphaFactor : THREE.ZeroFactor;
+      m.blendEquationAlpha = THREE.AddEquation;
+      m.blendSrcAlpha = THREE.ZeroFactor;
+      m.blendDstAlpha = THREE.OneFactor;
+    }
     return m;
   }
 

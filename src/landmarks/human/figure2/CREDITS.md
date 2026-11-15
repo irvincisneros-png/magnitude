@@ -19,7 +19,8 @@ skeleton) with photographic colour, normal, specular and opacity (hair card) tex
    the origin, and writes `figure_high.bin`, `figure_low.bin`, `figure.json` and
    `src/landmarks/human/figureData.ts`.
 2. `tools/build-figure-tex.py` (Python + Pillow + numpy) pads the UV gutters, resizes the textures to
-   2048² and 1024², packs normal XY + specular, derives a skin/cloth mask, and writes JPG/WebP/PNG.
+   2048² and 1024², packs normal XY + specular, derives a skin/cloth mask and a mask of the hair painted
+   on the scalp, feathers the hair cards' straight cut edges in their alpha, and writes JPG/WebP/PNG.
 
 Rebuild (from the repo root; `<rb>` holds the FBX and the `m002_*.tga` textures):
 
