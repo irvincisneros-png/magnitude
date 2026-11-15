@@ -12,6 +12,7 @@ import type { Quality } from './engine/types';
 import { mountFeatures } from './features';
 import { DESERTS, MANIFEST } from './landmarks/manifest';
 import { Anchor } from './ui/anchor';
+import { ComparisonBanner } from './ui/comparison';
 import { InfoCard, metaToCard } from './ui/infocard';
 import { Labels } from './ui/labels';
 import { MARKERS } from './ui/markers';
@@ -78,6 +79,7 @@ const ruler = new Ruler(dom.hud, {
   narrowQuery,
 });
 const labels = new Labels(dom.overlay);
+new ComparisonBanner(dom.hud);
 
 const hint = document.createElement('div');
 hint.className = 'hint';

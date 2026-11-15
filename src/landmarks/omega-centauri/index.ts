@@ -19,6 +19,7 @@ function makeMeta(): LandmarkMeta {
     range: [17.7, 19.7],
     evidence: 'measured',
     nesting: 'comparison',
+    comparisonBanner: 'Omega Centauri is about 17,000 light-years away. It is placed here only to compare sizes.',
     nestingNote:
       'The real cluster is about 17,000 light-years away in Centaurus, orbiting in the Milky Way\'s halo. It is placed here only so you can compare its size with the Orion Nebula.',
     blurb:

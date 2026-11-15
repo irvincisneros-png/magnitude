@@ -25,7 +25,7 @@ const meta: LandmarkMeta = {
   evidence: 'measured',
   nesting: 'true',
   blurb:
-    'Escherichia coli is a single-celled prokaryote about 2 micrometres long, roughly 15 times shorter than a skin cell is wide, and it has no nucleus: its DNA sits in a tangle called the nucleoid. Most E. coli live harmlessly in your gut.',
+    'This is a separate living cell, not part of the skin cell above it. Escherichia coli is a single-celled prokaryote about 2 micrometres long, roughly 15 times shorter than a skin cell is wide, and it has no nucleus: its DNA sits in a tangle called the nucleoid. Most E. coli live harmlessly in your gut.',
   howWeKnow: {
     instrument: 'Light microscopes, electron microscopes and cryo-electron tomography',
     text:
@@ -40,7 +40,7 @@ const meta: LandmarkMeta = {
     { text: 'Ribosomes', position: [0, 0, 0], zoomRange: [-0.4, 0.35] },
     { text: 'Flagellum (spins up to ~100 turns a second)', position: [0, 0, 0], zoomRange: [-0.15, 0.95] },
     { text: 'Pili', position: [0, 0, 0], zoomRange: [-0.9, 0.2] },
-    { text: 'Bacteriophage T4 (virus)', position: [0, 0.035, 0], zoomRange: [0.0, 0.6] },
+    { text: 'Bacteriophage T4: a real E. coli virus', position: [0, 0.035, 0], zoomRange: [0.0, 0.6] },
     { text: '2 micrometres long', position: [0, 0, 0], zoomRange: [0.05, 1.1] },
   ],
 };

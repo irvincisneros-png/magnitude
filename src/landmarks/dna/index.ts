@@ -29,7 +29,7 @@ const meta: LandmarkMeta = {
   evidence: 'measured',
   nesting: 'true',
   blurb:
-    'DNA is two long chains twisted into a spiral staircase just 2 nanometres wide. Each chain has a backbone of sugar and phosphate, and the steps are pairs of bases (A with T, G with C) whose order is the code that builds you.',
+    'DNA is two long chains twisted into a spiral staircase just 2 nanometres wide. Each chain has a backbone of sugar and phosphate, and the steps are pairs of bases (A with T, G with C). The order of the bases is the code. The strand you reach from the virus is the phage’s own DNA, packed in its head. Your DNA has exactly the same structure.',
   howWeKnow: {
     instrument: 'X-ray crystallography',
     text:
@@ -39,6 +39,7 @@ const meta: LandmarkMeta = {
   timescale: 'Atoms vibrate in about 10⁻¹³ to 10⁻¹² s; one turn of the helix can twist and flex in nanoseconds',
   post: { bloom: 0.45, exposure: 1.1 },
   labels: [
+    { text: 'The virus’s own DNA, same structure as yours', position: [0, 0.9, 0], zoomRange: [0.1, 1.3] },
     { text: 'Sugar–phosphate backbone', position: [0, 0, 0], zoomRange: [-0.85, 1.0] },
     { text: 'Base pair (A–T, G–C)', position: [0, 0, 0], zoomRange: [-0.3, 1.2] },
     { text: 'Major groove', position: [0, 0, 0], zoomRange: [-0.2, 1.2] },

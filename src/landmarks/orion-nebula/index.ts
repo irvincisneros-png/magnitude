@@ -22,6 +22,7 @@ const meta: LandmarkMeta = {
   range: [16.2, 18.5],
   evidence: 'measured',
   nesting: 'comparison',
+  comparisonBanner: 'The Solar System is not inside the Orion Nebula. It is placed here only to compare sizes.',
   nestingNote:
     'Our Solar System is placed inside the nebula only to compare sizes. The real Orion Nebula is about 1,340 light-years away. Our Sun was born in a cloud like this about 4.6 billion years ago.',
   blurb:

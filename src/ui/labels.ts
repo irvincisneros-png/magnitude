@@ -10,7 +10,7 @@ import { declutter, type DeclutterItem, type Rect } from './declutter';
 
 const LABEL_H = 16;   // text box height (px)
 const LABEL_LIFT = 12; // label text sits this far above its anchor point (matches CSS)
-const KEEP_OUT = '.card, .toolbar, .anchor, .ruler, .panel.open, .dock-item';
+const KEEP_OUT = '.card, .comparison, .toolbar, .anchor, .ruler, .panel.open, .dock-item';
 const NARROW_MAX = 3;
 
 interface Entry extends DeclutterItem {

@@ -164,7 +164,8 @@ button { font: inherit; color: inherit; }
 .how-inst { margin: 10px 0 4px; font-size: 12px; color: var(--cool); letter-spacing: 0.02em; }
 .how-text { margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
 .card-note {
-  margin: 14px 0 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: var(--modelled);
+  margin: 14px 0 0; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--modelled);
+  padding: 9px 11px; border-radius: 10px; background: rgba(240, 194, 119, 0.09); border: 1px solid rgba(240, 194, 119, 0.35);
 }
 .card-note svg { flex: none; margin-top: 2px; }
 
@@ -556,3 +557,24 @@ button { font: inherit; color: inherit; }
   scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 .timelight, .dock-item { background: linear-gradient(180deg, var(--glass-hi), transparent 60%), rgba(9, 11, 17, 0.72); }
+
+/* ---------------------------------------------------------------- size-comparison banner */
+.comparison {
+  position: absolute; left: 50%; top: calc(22px + var(--safe-t)); transform: translateX(-50%);
+  width: max-content; max-width: min(520px, calc(100% - 640px)); pointer-events: none;
+  display: flex; align-items: center; gap: 12px; padding: 9px 16px 9px 10px; border-radius: 999px;
+  background: rgba(24, 17, 6, 0.62); border: 1px solid rgba(240, 194, 119, 0.45);
+  box-shadow: 0 0 24px -8px rgba(240, 194, 119, 0.45), 0 18px 40px -20px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%);
+  font-size: 13px; line-height: 1.4; color: var(--ink);
+}
+.comparison[hidden] { display: none; }
+.comparison-tag {
+  flex: none; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px; color: #1a1205; background: var(--modelled);
+}
+@media (max-width: 1100px) { .comparison { max-width: calc(100% - 560px); } }
+.narrow .comparison {
+  left: calc(12px + var(--safe-l)); right: calc(12px + var(--safe-r)); top: calc(176px + var(--safe-t)); transform: none; width: auto; max-width: none;
+  flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 14px; border-radius: 16px; font-size: 12.5px;
+}

@@ -27,6 +27,7 @@ const meta: LandmarkMeta = {
   range: [8.95, 11.5],
   evidence: 'measured',
   nesting: 'comparison',
+  comparisonBanner: 'Earth is not this close to the Sun. It is placed next to it only to compare sizes.',
   nestingNote:
     'Earth is drawn to the correct size but placed right next to the Sun so you can compare them. In reality Earth is about 150 million km away, roughly 107 Sun-widths.',
   blurb:

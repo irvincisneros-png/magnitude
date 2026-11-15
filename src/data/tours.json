@@ -177,21 +177,21 @@
         "yaw": 0.2,
         "pitch": 0.3,
         "seconds": 7,
-        "caption": "For comparison, a bacterium: E. coli is about 15 times smaller than your skin cell and has no nucleus. Real ones live in your gut, not inside your cells."
+        "caption": "Size comparison only. This bacterium is not inside your skin cell. E. coli is about 15 times smaller than it and has no nucleus. Real ones live in your gut."
       },
       {
         "s": -6.45,
         "yaw": 0.5,
         "pitch": 0.15,
         "seconds": 7,
-        "caption": "Smaller again: a virus that attacks bacteria. Its head holds a tightly wound thread of DNA."
+        "caption": "Smaller again: a virus that attacks bacteria. Its head holds a tightly wound thread of its own DNA."
       },
       {
         "s": -8.5,
         "yaw": -0.3,
         "pitch": 0.3,
         "seconds": 7,
-        "caption": "DNA: a double helix about 2 nanometres wide. Each of your own cells holds around two metres of it, folded up tightly."
+        "caption": "DNA: a double helix about 2 nanometres wide. This is the virus’s DNA, and yours has the same structure. Each of your own cells holds around two metres of it, folded up tightly."
       },
       {
         "s": -9.6,

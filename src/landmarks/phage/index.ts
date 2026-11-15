@@ -34,7 +34,7 @@ const meta: LandmarkMeta = {
   evidence: 'measured',
   nesting: 'true',
   blurb:
-    'Bacteriophage T4 is a virus that infects bacteria, not people. Viruses are not cells and cannot reproduce on their own: T4 lands on an E. coli cell, punches through its wall and injects its DNA, which takes over the cell to build new viruses.',
+    'Bacteriophage T4 is a virus that infects bacteria, not people. Viruses are not cells and cannot reproduce on their own: T4 really does land on E. coli cells, punch through the wall and inject its DNA, which takes over the cell to build new viruses.',
   howWeKnow: {
     instrument: 'Electron microscopy and cryo-electron microscopy (cryo-EM)',
     text:

@@ -25,8 +25,9 @@ const meta: LandmarkMeta = {
   range: [-5.3, -3.3],
   evidence: 'measured',
   nesting: 'comparison',
+  comparisonBanner: 'This bacterium is not inside the skin cell. It is placed here only to compare sizes.',
   nestingNote:
-    'The bacterium at the centre is here only to compare sizes: it is about 15 times smaller than this cell. Real E. coli live in your gut, outside your cells. What this nucleus really holds is your own DNA.',
+    'Bacteria like this are NOT inside your skin cells. This E. coli is here only to compare sizes (it is about 15 times smaller than the cell). Real E. coli live in your gut, and this nucleus really holds your own DNA.',
   blurb:
     'A keratinocyte, the main cell of the outer layer of your skin, is about 30 micrometres across. It is packed with organelles, tough keratin fibres and a nucleus that holds about 2 metres of DNA wound onto protein spools.',
   howWeKnow: {
@@ -38,6 +39,7 @@ const meta: LandmarkMeta = {
   timescale: 'A skin cell takes about 4 weeks to move from the bottom layer to the surface and flake off',
   post: { bloom: 0.5, exposure: 1.1 },
   labels: [
+    { text: 'E. coli bacterium — shown for size only', position: [0, 0, 0], zoomRange: [-0.85, 0.2] },
     { text: 'Nucleosomes: DNA wound around histone proteins', position: [24 * NM, 6 * NM, 0], zoomRange: [-2.9, -2.0] },
     { text: 'Chromatin (DNA packed with proteins)', position: [0.012, 0.01, 0], zoomRange: [-1.95, -1.15] },
     { text: 'Nucleolus (builds ribosomes)', position: [NUCLEOLUS_C.x, NUCLEOLUS_C.y + NUCLEOLUS_R, NUCLEOLUS_C.z], zoomRange: [-1.3, -0.45] },

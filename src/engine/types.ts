@@ -59,6 +59,8 @@ export interface LandmarkMeta {
   evidence: Evidence;
   nesting: 'true' | 'comparison';// how the next-smaller landmark sits inside this one
   nestingNote?: string;          // shown when 'comparison'
+  /** One short plain sentence for the on-screen "SIZE COMPARISON" banner while this landmark cross-fades into the next-smaller one. Fallback: first sentence of nestingNote. */
+  comparisonBanner?: string;
   blurb: string;                 // 1–2 sentences, Year 7–10 reading level
   howWeKnow: { instrument: string; text: string };
   lightTime: string;             // light-crossing time, human readable

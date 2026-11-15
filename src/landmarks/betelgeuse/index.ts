@@ -35,6 +35,7 @@ const meta: LandmarkMeta = {
   range: [10.2, 13.1],
   evidence: 'measured',
   nesting: 'comparison',
+  comparisonBanner: 'Betelgeuse is about 550 light-years away. It is placed next to the Sun only to compare sizes.',
   nestingNote:
     'Betelgeuse is really about 550 light-years away, in the constellation Orion. Here it is brought next to the Sun, and then swapped into the Sun’s place, so you can compare their sizes. The Sun and the planets’ orbits are drawn to the same scale.',
   blurb:
