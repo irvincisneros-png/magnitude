@@ -55,7 +55,7 @@ const labels: LandmarkLabel[] = [
   { text: 'About 2 trillion galaxies', position: toScene(galPos(300, 40, 26000)), zoomRange: [-0.4, 0.3] },
   { text: 'Cosmic microwave background — the oldest light', position: toScene(galPos(250, -15, R_UNIVERSE_MLY)), zoomRange: [-0.45, 0.35] },
   { text: 'Released 380,000 years after the Big Bang, 13.8 billion years ago', position: toScene(galPos(110, 30, R_UNIVERSE_MLY)), zoomRange: [-0.25, 0.2] },
-  { text: 'You are here — the centre of OUR view, not of the universe', position: [0, 0, 0], zoomRange: [-1.6, 0.15] },
+  { text: 'You are here: the centre of our view only', position: [0, 0, 0], zoomRange: [-1.6, 0.15] },
   { text: 'Observable universe: 93 billion light-years across', position: [0, 0.6, 0], zoomRange: [0.05, 0.6] },
   { text: 'We cannot see further — the universe itself goes on', position: [0, -0.64, 0], zoomRange: [0.28, 0.6] },
 ];

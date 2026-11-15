@@ -294,10 +294,13 @@ button { font: inherit; color: inherit; }
 
 /* ---------------------------------------------------------------- narrow screens (phones) */
 .narrow .anchor { top: calc(14px + var(--safe-t)); left: calc(16px + var(--safe-l)); gap: 8px; }
-.narrow .anchor-friendly { font-size: 24px; }
+.narrow .anchor-read { justify-items: start; }
+.narrow .anchor-sci { min-height: 15px; } /* keep the row when it is empty (Planck) so the chip below never rides up under the toolbar */
+.anchor-label, .anchor-sci { text-shadow: 0 0 6px rgba(0, 0, 0, 0.55), 0 1px 14px rgba(0, 0, 0, 0.5); }
+.narrow .anchor-friendly { font-size: 24px; line-height: 27px; white-space: nowrap; } /* fixed line height: a shrunk value must not pull the chip up under the toolbar */
 .narrow .anchor-ratio { font-size: 11px; padding: 5px 10px 5px 9px; }
 .narrow .toolbar { top: calc(12px + var(--safe-t)); right: calc(12px + var(--safe-r)); gap: 6px; }
-.narrow .tool { width: 36px; height: 36px; }
+.narrow .tool { width: 40px; height: 40px; }
 
 .narrow .ruler { left: calc(18px + var(--safe-l)); right: calc(18px + var(--safe-r)); top: auto; bottom: calc(8px + var(--safe-b)); width: auto; height: 50px; }
 .narrow .ruler-line { left: 0; right: 0; top: 22px; bottom: auto; width: auto; height: 1px;
@@ -315,6 +318,9 @@ button { font: inherit; color: inherit; }
 .narrow .lm-name { right: auto; left: 0; top: -24px; transform: translateX(-50%); font-size: 10.5px; }
 .narrow .lm.active .lm-name { transform: translateX(-50%); }
 .narrow .lm:not(.active) .lm-name { display: none; }
+/* the first and last names would run off the screen when centred on their tick */
+.narrow .lm.active[data-id='planck'] .lm-name { transform: translateX(-16%); }
+.narrow .lm.active[data-id='universe'] .lm-name { transform: translateX(-88%); }
 .narrow .ruler-thumb::before { left: -1px; top: -11px; width: 2px; height: 22px; }
 .narrow .ruler.dragging .ruler-thumb::before { left: -1px; top: -14px; width: 2px; height: 28px; }
 .narrow .ruler-thumb-label { left: 0; top: 13px; transform: translateX(-50%); }
@@ -532,14 +538,14 @@ button { font: inherit; color: inherit; }
 .reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { transition-duration: 0.01ms !important; animation: none !important; }
 
 /* phones */
-.narrow .toolbar { flex-wrap: wrap; justify-content: flex-end; width: 168px; }
+.narrow .toolbar { flex-wrap: wrap; justify-content: flex-end; width: 178px; }
 .narrow .panel[data-id='compare'], .narrow .panel[data-id='tours'], .narrow .panel[data-id='missions'], .narrow .panel[data-id='settings'] { width: auto; }
 .narrow .cmp-sentence { font-size: 15.5px; }
 .narrow .dock { left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); bottom: calc(66px + var(--safe-b)); }
 .narrow .dock-item { padding: 11px 14px 12px; border-radius: 16px; }
 .narrow .tp-caption { font-size: 14px; min-height: 0; }
 .narrow.dock-on .card { display: none; }
-.narrow .hud:has(.panel.open) .card, .narrow .hud:has(.panel.open) .timelight { visibility: hidden; }
+.narrow .hud:has(.panel.open) .card, .narrow .hud:has(.panel.open) .timelight, .narrow .hud:has(.panel.open) .hint { visibility: hidden; }
 .narrow .cmp-input { font-size: 16px; height: 38px; }
 .narrow .timelight { top: calc(144px + var(--safe-t)); left: calc(16px + var(--safe-l)); width: min(215px, calc(100% - 150px)); padding: 8px 12px 9px; gap: 6px; }
 .narrow .tl-label { font-size: 8.5px; letter-spacing: 0.16em; }
@@ -577,4 +583,19 @@ button { font: inherit; color: inherit; }
 .narrow .comparison {
   left: calc(12px + var(--safe-l)); right: calc(12px + var(--safe-r)); top: calc(176px + var(--safe-t)); transform: none; width: auto; max-width: none;
   flex-direction: column; align-items: flex-start; gap: 6px; padding: 10px 14px; border-radius: 16px; font-size: 12.5px;
+}
+
+/* ---------------------------------------------------------------- touch: every control has a hit area of at least 40 px */
+@media (pointer: coarse) {
+  .tool { width: 40px; height: 40px; }
+  .panel-close { width: 40px; height: 40px; margin: -6px -6px -6px 0; }
+  .mini, .cmp-slot-actions .mini, .cmp-swap, .mh-form .mini { height: 40px; min-width: 40px; }
+  .mini.icon { width: 40px; }
+  .cmp-input, .narrow .cmp-input { height: 40px; }
+  .seg { height: 40px; }
+  .switch::after { content: ''; position: absolute; inset: -10px -4px; }
+  .card-toggle::after { content: ''; position: absolute; inset: -8px; }
+  .range { height: 40px; }
+  .card-toggle { position: relative; }
+  .card-how summary { min-height: 40px; }
 }

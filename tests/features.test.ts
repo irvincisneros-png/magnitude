@@ -346,6 +346,7 @@ describe('outcomes.json', () => {
     outcomes: Record<string, { year: number; code: string; text: string; source: string; nesaOutcome: string | null; officialSource: string | null }>;
     landmarks: Record<string, { classroomUse: string; outcomes: { code: string; fit: string }[] }>;
     wholeTool: { outcomes: { code: string }[] };
+    beyondSyllabus: { id: string; reason: string }[];
     needsTeacherCheck: { id: string; reason: string }[];
   };
   it('has an entry for every landmark', () => {
@@ -366,9 +367,9 @@ describe('outcomes.json', () => {
       }
     }
   });
-  it('lists every unmapped landmark under needsTeacherCheck, and only those', () => {
+  it('lists every unmapped landmark under beyondSyllabus or needsTeacherCheck (never both), and only those', () => {
     const unmapped = Object.entries(o.landmarks).filter(([, v]) => v.outcomes.length === 0).map(([id]) => id).sort();
-    expect(o.needsTeacherCheck.map((n) => n.id).sort()).toEqual(unmapped);
-    for (const n of o.needsTeacherCheck) expect(n.reason.length).toBeGreaterThan(20);
+    expect([...o.beyondSyllabus, ...o.needsTeacherCheck].map((n) => n.id).sort()).toEqual(unmapped);
+    for (const n of [...o.beyondSyllabus, ...o.needsTeacherCheck]) expect(n.reason.length).toBeGreaterThan(20);
   });
 });

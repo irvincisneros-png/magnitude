@@ -11,7 +11,7 @@ export class Anchor {
   private ratio: HTMLElement;
   private last = '';
 
-  constructor(parent: HTMLElement) {
+  constructor(private parent: HTMLElement) {
     this.el = document.createElement('header');
     this.el.className = 'anchor';
     this.el.innerHTML = `
@@ -26,6 +26,23 @@ export class Anchor {
     this.sci = this.el.querySelector('.anchor-sci')!;
     this.ratio = this.el.querySelector('.anchor-ratio')!;
     parent.appendChild(this.el);
+    window.addEventListener('resize', () => this.fit());
+  }
+
+  /**
+   * On phones the toolbar sits to the right of the readout; shrink a long value ("188 thousand light-years")
+   * so it never runs underneath the buttons. Wide screens have the room and keep the full size.
+   */
+  private fit() {
+    const f = this.friendly;
+    f.style.fontSize = '';
+    if (!this.parent.closest('.narrow')) return;
+    const bar = this.parent.querySelector<HTMLElement>('.toolbar');
+    if (!bar || bar.hidden) return;
+    const room = bar.getBoundingClientRect().left - f.getBoundingClientRect().left - 16;
+    const need = f.scrollWidth;
+    if (room <= 0 || need <= room) return;
+    f.style.fontSize = `${Math.max(13, Math.floor(parseFloat(getComputedStyle(f).fontSize) * (room / need)))}px`;
   }
 
   update(s: number) {
@@ -37,6 +54,7 @@ export class Anchor {
     if (key === this.last) return;
     this.last = key;
     this.friendly.textContent = f;
+    this.fit();
     this.sci.textContent = sci === f ? '' : sci;
     this.ratio.dataset.dir = r.direction;
     this.ratio.innerHTML =

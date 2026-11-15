@@ -1,5 +1,5 @@
 {
-  "note": "Outcome codes and wording are copied verbatim from the owner's existing sites. \"code\" is the school programme code (Year + unit.lesson.dot point) from the owner's NSW Junior Science sequence; \"nesaOutcome\" is the official Science 7-10 (2023) outcome code and is only filled where the owner's CellScape syllabus file links that dot point to one. Nothing here is invented: unmapped landmarks are listed under needsTeacherCheck.",
+  "note": "Outcome codes and wording are copied verbatim from the owner's existing sites. \"code\" is the school programme code (Year + unit.lesson.dot point) from the owner's NSW Junior Science sequence; \"nesaOutcome\" is the official Science 7-10 (2023) outcome code and is only filled where the owner's CellScape syllabus file links that dot point to one. Nothing here is invented: landmarks with no matching dot point are listed under beyondSyllabus (extension content) or needsTeacherCheck (a teacher decision is needed).",
   "sources": [
     {
       "file": "cellscape/content/school_sequence_7-10.json",
@@ -8,6 +8,10 @@
     {
       "file": "cellscape/content/syllabus.json",
       "description": "CellScape syllabus map: dot points of Science 7-10 (2023) with official outcome codes (e.g. SC4-CLS-01) and school codes."
+    },
+    {
+      "file": "Year-7/observing-universe/content.jsx",
+      "description": "Owner's Year 7 observing-the-universe lesson; only consulted to check what Y7 1.5.1 covers (the James Webb Space Telescope and galaxies). It supplies no wording."
     }
   ],
   "fitKey": {
@@ -692,16 +696,19 @@
       }
     ]
   },
-  "needsTeacherCheck": [
+  "beyondSyllabus": [
     {
       "id": "planck",
-      "reason": "None of the owner's sequence documents has a dot point about the Planck scale, quantum gravity or the limits of measurement. Left unmapped."
-    },
+      "reason": "The Planck length and quantum foam sit beyond Science 7-10, so this is enrichment, not syllabus content. Searched cellscape/content/school_sequence_7-10.json, cellscape/content/syllabus.json and the sibling Year 7-10 sites for dot points on the Planck scale, quantum gravity or the limits of measurement and found none, so no outcome is claimed. Use it as a model-and-evidence discussion (see the whole-tool outcomes Y8 8.2.2, Y8 8.2.3 and Y7 1.5.1): everything here is speculative and the evidence badge says so."
+    }
+  ],
+  "needsTeacherCheck": [
     {
       "id": "milky-way",
-      "reason": "No dot point in the owner's sources is about galaxies. Y10 7.3.4 (learning about stars from the electromagnetic spectrum) is the nearest verified dot point, but it is about stars, so it is not applied automatically.",
+      "reason": "No dot point in the owner's sources (cellscape/content/school_sequence_7-10.json; the sibling Year-7 observing-universe lessons) is about galaxies as such. Y10 7.3.4 (learning about stars from the electromagnetic spectrum) and Y7 1.5.1 (a recent advancement that increased knowledge of the Universe, taught through the James Webb Space Telescope in the Year-7 observing-universe lesson) are the nearest verified dot points, but neither is about the Milky Way, so neither is applied automatically.",
       "candidates": [
-        "Y10 7.3.4"
+        "Y10 7.3.4",
+        "Y7 1.5.1"
       ]
     }
   ]

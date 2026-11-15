@@ -1,7 +1,7 @@
 /**
  * Teacher view: landmarks with deep links, classroom ideas, tours, missions and NSW Science 7–10 outcome mapping.
  * Outcome codes and wording come from src/data/outcomes.json, which copies them from the owner's existing sites
- * (never invented); landmarks without a verified match are listed under "Needs teacher check".
+ * (never invented); landmarks with no matching dot point are marked "Beyond the syllabus" (extension) or listed under "Needs teacher check".
  */
 import './teacher.css';
 import missionsJson from './data/missions.json';
@@ -19,6 +19,7 @@ interface Data {
   outcomes: Record<string, OutcomeDef>;
   landmarks: Record<string, { classroomUse: string; outcomes: { code: string; fit: 'direct' | 'loose' }[] }>;
   wholeTool: { outcomes: { code: string; fit: 'direct' | 'loose' }[] };
+  beyondSyllabus?: { id: string; reason: string }[];
   needsTeacherCheck: { id: string; reason: string; candidates?: string[] }[];
 }
 const data = outcomesJson as unknown as Data;
@@ -80,7 +81,10 @@ for (const row of MANIFEST) {
     h('a', { class: 'link', href: link(row.home ?? home(row.sizeMeters, row.range)) }, 'Open in Magnitude')));
   if (d) {
     card.append(h('p', { class: 'use' }, d.classroomUse));
-    card.append(d.outcomes.length ? outcomeList(d.outcomes) : h('p', { class: 'none' }, 'No verified outcome yet. See "Needs teacher check" below.'));
+    const beyond = data.beyondSyllabus?.find((b) => b.id === row.id);
+    card.append(d.outcomes.length ? outcomeList(d.outcomes)
+      : beyond ? h('p', { class: 'none' }, h('strong', {}, 'Beyond the syllabus (extension). '), beyond.reason)
+        : h('p', { class: 'none' }, 'No verified outcome yet. See "Needs teacher check" below.'));
   }
   main.append(card);
 }

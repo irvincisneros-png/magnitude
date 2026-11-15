@@ -13,6 +13,7 @@ import { mountFeatures } from './features';
 import { DESERTS, MANIFEST } from './landmarks/manifest';
 import { Anchor } from './ui/anchor';
 import { ComparisonBanner } from './ui/comparison';
+import { reducedMotion } from './ui/feature-kit';
 import { InfoCard, metaToCard } from './ui/infocard';
 import { Labels } from './ui/labels';
 import { MARKERS } from './ui/markers';
@@ -66,7 +67,7 @@ const homeFor = (sizeMeters: number) => {
 };
 const homes = MANIFEST.map((r) => homeFor(r.sizeMeters));
 const humanHome = homes[MANIFEST.findIndex((r) => r.id === 'human')];
-const controller = new Controller(dom.canvas, { homes, initialS: humanHome });
+const controller = new Controller(dom.canvas, { homes, initialS: humanHome, reducedMotion });
 
 const anchor = new Anchor(dom.hud);
 const card = new InfoCard(dom.hud);
@@ -106,7 +107,7 @@ registerApi({
   getMeta: (id) => active.find((a) => a.id === id)?.meta ?? metaCache.get(id),
   markers: MARKERS,
   homeFor,
-  reducedMotion: controller.reducedMotion,
+  get reducedMotion() { return controller.reducedMotion; },
 });
 
 // ------------------------------------------------------------------ resize

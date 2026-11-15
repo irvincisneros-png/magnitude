@@ -13,6 +13,8 @@ export interface ControllerOptions {
   /** Landmark "home" scales, ascending, for ←/→. */
   homes: number[];
   initialS: number;
+  /** Live reduced-motion preference (OS setting or the in-app switch). Defaults to the OS media query. */
+  reducedMotion?: () => boolean;
 }
 
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -22,7 +24,7 @@ export class Controller {
   s: number;
   yaw = 0.35;
   pitch = 0.18;
-  readonly reducedMotion: boolean;
+  get reducedMotion(): boolean { return this.opts.reducedMotion ? this.opts.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches; }
   /** Called on any direct user input (wheel, drag, pinch, keys). */
   onUserInput: () => void = () => {};
 
@@ -40,7 +42,6 @@ export class Controller {
   private lastHash = '';
 
   constructor(private el: HTMLElement, private opts: ControllerOptions) {
-    this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     this.s = clampS(readHashS() ?? opts.initialS);
     el.addEventListener('wheel', this.onWheel, { passive: false });
     el.addEventListener('pointerdown', this.onDown);
@@ -102,7 +103,7 @@ export class Controller {
       else this.vS += this.keyZoom * speed * 6 * dt;
     }
     if (!rm) {
-      this.s += this.vS * dt;
+      if (!this.pinch) this.s += this.vS * dt; // while two fingers are down they set s directly; integrating vS on top would overshoot
       this.yaw += this.vYaw * dt;
       this.pitch += this.vPitch * dt;
       const damp = Math.exp(-dt * 6);
