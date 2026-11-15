@@ -135,3 +135,10 @@ released under the **MIT License**, Copyright (c) 2020 Microsoft.
 
 The close-up hairs on the back of the hand are generated in `hairs.ts` on an ellipsoid fitted to the
 figure's skin curvature at the hand (pose.ts, figureData.ts).
+
+## Licence status (checked 2026-11-16)
+
+- data.nsw.gov.au lists "NSW Imagery" and the 5 m elevation model as "Creative Commons Attribution" without naming a version; the Spatial Services copyright and web-service terms pages redirected and could not be re-read live on this date (the quotes above are from archive copies).
+- The NSW_Imagery map service's own description credits "external imagery sourced from © AAM 2011,2012; © Jacobs Group Ausimage 2002,2006,2009,2014; © LANDSAT 2014". The levels used here are Spatial Services' own 2021 and 2008 surveys plus a Landsat 2014 fill (Landsat is US Government public-domain data), but this has not been confirmed with Spatial Services.
+- Both services set `exportTilesAllowed: false`. The imagery here was fetched once through ordinary map requests and is shipped downsampled.
+- Not yet confirmed in writing with Spatial Services. If they object, delete `public/assets/human/aerial_*` and the scene falls back to the generated ground (the terrain shader treats missing imagery as "no photo").
