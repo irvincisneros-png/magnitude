@@ -13,6 +13,7 @@
  */
 import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
+import { AERIAL, type Aerial } from './aerial';
 import { COMMON, FRAME, MAP_O, NOISE_T, type Shared } from './glsl';
 import { coverAt, siteHeight, type SiteData } from './siteData';
 import type { SiteTextures } from './siteTex';
@@ -20,14 +21,26 @@ import type { SiteTextures } from './siteTex';
 // ------------------------------------------------------------------ crowns (leaf-card clusters)
 const crownVert = /* glsl */ `
 ${COMMON}
+${AERIAL}
 attribute vec4 aT;    // x, y (ground), z, height
 attribute vec3 aR;    // radius, kind (0 garden tree, 1 dune shrub, 3 eucalypt), seed
 attribute vec4 aCard; // card centre in the unit crown (x, y, z ∈ [−1, 1]), size; size < 0 → trunk
 attribute vec3 aCorner; // corner u, v (±1), card seed
 uniform float uShow;
 varying vec3 vP; varying vec3 vN; varying vec2 vUV; varying float vKind; varying float vSeed; varying float vAO; varying float vTop; varying float vTrunk;
+varying vec3 vTint;
 LOGZ_VARY
 void main() {
+  // the canopy's colour in the aerial photograph under this plant, as a tint on its leaf colour
+  vTint = vec3(1.0);
+  {
+    vec4 ph = aerialPhoto(aT.xz - MAP_O);
+    if (ph.a > 0.01) {
+      vec3 c = ph.rgb / ph.a * uAerGain;
+      vec3 ref = aR.y > 0.5 && aR.y < 1.5 ? vec3(0.045, 0.058, 0.03) : aR.y > 2.5 ? vec3(0.06, 0.068, 0.045) : vec3(0.048, 0.07, 0.025);
+      vTint = mix(vec3(1.0), clamp(c / ref, vec3(0.6), vec3(1.7)), 0.7 * ph.a);
+    }
+  }
   float H = aT.w * uShow, R = aR.x, kind = aR.y, seed = aR.z;
   vec3 cc = aCard.xyz;
   // crown envelope per kind: dune shrubs are low, wide and sheared landward by the onshore wind
@@ -77,6 +90,7 @@ const crownFrag = /* glsl */ `
 ${COMMON}
 ${NOISE_T}
 varying vec3 vP; varying vec3 vN; varying vec2 vUV; varying float vKind; varying float vSeed; varying float vAO; varying float vTop; varying float vTrunk;
+varying vec3 vTint;
 LOGZ_VARY
 void main() {
   vec3 alb;
@@ -105,6 +119,7 @@ void main() {
     }
     // each leaf cluster lit on its upper side, shaded underneath
     alb *= 0.55 + 0.9 * leafN * (0.6 + 0.4 * twig);
+    alb *= vTint;
   }
   vec3 p = vP;
   vec3 v = normalize(uCamM - p);
@@ -354,8 +369,9 @@ export class Trees {
   private meshes: THREE.Mesh[] = [];
   private uShow = { value: 1 };
 
-  constructor(shared: Shared, private D: SiteData, tex: SiteTextures) {
-    const u = { ...shared, uShow: this.uShow, tNoise: tex.uniforms.tNoise };
+  /** keep: one byte per plant (aerial_keep.bin): 0 = it would stand where the aerial photo shows no vegetation. */
+  constructor(shared: Shared, private D: SiteData, tex: SiteTextures, aer: Aerial, private keep: Uint8Array | null) {
+    const u = { ...shared, ...aer.uniforms, uShow: this.uShow, tNoise: tex.uniforms.tNoise };
     this.crownMat = new THREE.ShaderMaterial({ vertexShader: crownVert, fragmentShader: crownFrag, side: THREE.DoubleSide, uniforms: u });
     this.pineMat = new THREE.ShaderMaterial({ vertexShader: pineVert, fragmentShader: pineFrag, side: THREE.DoubleSide, uniforms: u });
     this.tussMat = new THREE.ShaderMaterial({ vertexShader: tussVert, fragmentShader: tussFrag, side: THREE.DoubleSide, uniforms: u });
@@ -372,6 +388,7 @@ export class Trees {
     const cfg = TIER[q], D = this.D, T = D.trees, n = T.length / 5;
     const far: number[][] = [], near: number[][] = [], pines: number[][] = [], shadows: number[][] = [];
     for (let i = 0; i < n; i++) {
+      if (this.keep && !this.keep[i]) continue;
       const x = T[i * 5], z = T[i * 5 + 1], h = T[i * 5 + 2], r = T[i * 5 + 3], kind = T[i * 5 + 4];
       const s = Math.abs((Math.sin(i * 12.9898 + x * 0.0137) * 43758.5453) % 1);
       const d = Math.hypot(x, z);

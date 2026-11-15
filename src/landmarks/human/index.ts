@@ -9,12 +9,14 @@
  * the dune, the beach and the surf; and from ~5 km up the coast between the sea and the
  * escarpment, softening into haze and cloud as the Earth scene takes over.
  *
- * The place is real and at true scale: built from OpenStreetMap and elevation data by
- * tools/build-woonona.mjs (see CREDITS.md and site.ts). Scene root scales metres → units (1/1.7);
+ * The place is real and at true scale: built from OpenStreetMap and the NSW 5 m elevation model by
+ * tools/build-woonona.mjs, and coloured from above by NSW Spatial Services aerial photography
+ * (tools/build-woonona-imagery.py, aerial.ts); see CREDITS.md and site.ts. Scene root scales metres → units (1/1.7);
  * all children are authored in metres relative to the origin ("H metres"). See glsl.ts for the
  * shared lighting, depth and air model.
  */
 import * as THREE from 'three';
+import { Aerial, loadAerialMeta } from './aerial';
 import type { FrameState, InitContext, Landmark, LandmarkFactory, LandmarkMeta, Quality } from '../../engine/types';
 import { Built } from './built';
 import { Figure2 } from './figure2/index';
@@ -46,7 +48,7 @@ const meta: LandmarkMeta = {
   howWeKnow: {
     instrument: 'Tape measures, microscopes, maps and elevation surveys',
     text:
-      'Human heights are measured directly with a stadiometer (a ruler on a wall). Closer in, a dermatoscope or a microscope shows the fine furrows of skin, hairs about 70 micrometres wide and flat dead cells about 30–40 micrometres across. The beach in this scene is built from real map data (OpenStreetMap) and elevation surveys made with laser scanners flown in aircraft and radar from space, so its shape and size are true.',
+      'Human heights are measured directly with a stadiometer (a ruler on a wall). Closer in, a dermatoscope or a microscope shows the fine furrows of skin, hairs about 70 micrometres wide and flat dead cells about 30–40 micrometres across. The beach in this scene is built from real map data (OpenStreetMap), an elevation model made from overlapping aerial photographs, and the aerial photographs themselves (the colour of the ground you see from above, taken in 2021 and 2008), so its shape, size and look are true. Aerial photography and elevation: © State of New South Wales (Spatial Services, a business unit of the Department of Customer Service NSW), CC BY 4.0, extracted 15 November 2026. Map data © OpenStreetMap contributors (ODbL).',
   },
   lightTime: 'About 6 nanoseconds to travel your height',
   timescale: 'A heartbeat: about 1 second. A breath: about 4 seconds',
@@ -61,7 +63,7 @@ const meta: LandmarkMeta = {
     { text: 'Woonona Beach: about 1.3 km of sand', position: at(52, -617, 3), zoomRange: [2.05, 3.2] },
     { text: 'Dry sand above high tide: about 13 m wide (4–25 m)', position: at(6, -80, 2.5), zoomRange: [1.25, 2.05] },
     { text: 'Woonona Rock Pool: 52 m × 23 m', position: at(359, -1137, 3), zoomRange: [2.2, 3.0] },
-    { text: 'Illawarra Escarpment: 370–420 m high, 3.6 km inland', position: at(-3680, 0, 390), zoomRange: [2.3, 3.47] },
+    { text: 'Illawarra Escarpment: 360–440 m high, 3.8 km inland', position: at(-3840, 0, 380), zoomRange: [2.3, 3.47] },
   ],
 };
 
@@ -96,6 +98,7 @@ function createHuman(): Landmark {
   // the place is built once its data has loaded
   let terrain: Terrain | null = null, grass: Grass | null = null, built: Built | null = null, trees: Trees | null = null;
   let tex: SiteTextures | null = null;
+  let aer: Aerial | null = null;
   let renderer: THREE.WebGLRenderer | null = null;
   let tier: Quality = 'high';
   let disposed = false;
@@ -106,6 +109,7 @@ function createHuman(): Landmark {
 
   const build = (q: Quality) => {
     tier = q;
+    aer?.setTier(q);
     terrain?.build(q);
     grass?.setFeet(feet, q);
     built?.build(q);
@@ -131,16 +135,21 @@ function createHuman(): Landmark {
         L[3].position = [top[0], top[1] + 0.05, top[2]];
         L[4].position = [top[0], top[1] + 0.15, top[2]];
       }).catch((err) => console.error('[human] figure load failed', err));
-      const D = await loadSite(ctx.assetUrl);
+      const [D, am] = await Promise.all([loadSite(ctx.assetUrl), loadAerialMeta(ctx.assetUrl)]);
       siteHeld = true;
       if (disposed) { releaseSite(); siteHeld = false; return; }
       padSpot(D);
       tex = makeSiteTextures(D, renderer);
       sky.setSite(tex);
-      terrain = new Terrain(shared, D, tex);
+      // the real aerial photograph, draped as the ground's colour (its levels stream in by tier)
+      aer = new Aerial(am?.meta ?? null, ctx.assetUrl, renderer);
+      const keepB = am && am.keepBld.length * 8 === D.bld.length ? am.keepBld : null;
+      const keepT = am && am.keepTrees.length * 5 === D.trees.length ? am.keepTrees : null;
+      if (am && (!keepB || !keepT)) console.warn('[human] aerial_keep.bin does not match features.bin: re-run tools/build-woonona-imagery.py');
+      terrain = new Terrain(shared, D, tex, aer, am);
       grass = new Grass(shared, D);
-      built = new Built(shared, D);
-      trees = new Trees(shared, D, tex);
+      built = new Built(shared, D, aer, keepB);
+      trees = new Trees(shared, D, tex, aer, keepT);
       root.add(terrain.group, built.group, trees.group, grass.group);
       build(tier);
       if (Math.abs(siteHeight(D, 0, 0) + FRAME.sea - FRAME.ground) > 0.01) console.warn('[human] ground under the feet does not match GROUND_ELEV_M');
@@ -180,7 +189,7 @@ function createHuman(): Landmark {
     dispose() {
       disposed = true;
       sky.dispose(); figure.dispose(); skin.dispose();
-      terrain?.dispose(); grass?.dispose(); built?.dispose(); trees?.dispose(); tex?.dispose();
+      terrain?.dispose(); grass?.dispose(); built?.dispose(); trees?.dispose(); tex?.dispose(); aer?.dispose();
       if (siteHeld) { releaseSite(); siteHeld = false; }
     },
   };

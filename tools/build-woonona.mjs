@@ -129,11 +129,41 @@ function demAt(zoom, lat, lon) {
   const a = px(x0, y0), b = px(x0 + 1, y0), c = px(x0, y0 + 1), d = px(x0 + 1, y0 + 1);
   return a * (1 - fx) * (1 - fy) + b * fx * (1 - fy) + c * (1 - fx) * fy + d * fx * fy;
 }
-/** Best available elevation (m) at local (x, z). */
-function dem(x, z, coarse = false) {
+// NSW 5 m elevation model (NSW Spatial Services, from stereo imagery), when tools/fetch-nsw-dem.py has
+// fetched it into <rawDir>/nsw5m/: far more faithful than the terrain tiles here (it resolves the dune,
+// the railway embankment, the creeks and the road cuttings). Float32, row 0 north, EPSG:4326 extent.
+const NSW = {};
+for (const n of ['fine', 'coarse']) {
+  const j = path.join(RAW, 'nsw5m', `${n}.json`);
+  if (!fs.existsSync(j)) continue;
+  const info = JSON.parse(fs.readFileSync(j, 'utf8'));
+  const buf = fs.readFileSync(path.join(RAW, 'nsw5m', `${n}.f32`));
+  NSW[n] = { ...info, a: new Float32Array(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length)) };
+}
+if (Object.keys(NSW).length) console.log('elevation: NSW 5 m model (' + Object.keys(NSW).join(', ') + ') over land, terrain tiles elsewhere');
+function nswAt(g, lat, lon) {
+  const e = g.extent, W = g.width, H = g.height;
+  const fx = ((lon - e.xmin) / (e.xmax - e.xmin)) * W - 0.5, fy = ((e.ymax - lat) / (e.ymax - e.ymin)) * H - 0.5;
+  if (fx < 0 || fy < 0 || fx > W - 1.001 || fy > H - 1.001) return NaN;
+  const i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j;
+  const a = g.a[j * W + i], b = g.a[j * W + i + 1], c = g.a[(j + 1) * W + i], d = g.a[(j + 1) * W + i + 1];
+  if (!(a > -100 && b > -100 && c > -100 && d > -100)) return NaN;
+  return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+}
+/** Elevation (m) from the terrain tiles alone (the sea floor beyond the modelled nearshore uses these). */
+function demTiles(x, z, coarse = false) {
   const [lat, lon] = toLL(x, z);
   for (const zm of coarse ? [13, 12] : [15, 13, 12]) { const v = demAt(zm, lat, lon); if (!Number.isNaN(v)) return v; }
   return 0;
+}
+/** Best available elevation (m) at local (x, z): the NSW model on land (it reads 0 over the sea), else the tiles. */
+function dem(x, z, coarse = false) {
+  const [lat, lon] = toLL(x, z);
+  let v = NaN;
+  if (!coarse && NSW.fine) v = nswAt(NSW.fine, lat, lon);
+  if (Number.isNaN(v) && NSW.coarse) v = nswAt(NSW.coarse, lat, lon);
+  if (v > 0.02) return v;
+  return demTiles(x, z, coarse);
 }
 
 // ------------------------------------------------------------------ OSM
@@ -339,7 +369,7 @@ const waterF = new Float32Array(FINE.N * FINE.N);
 for (const e of waters) fillPolys(FINE, polysOf(e), waterF);
 function heightModel(x, z, coarse, landFlag, wet = 0) {
   const d = coastDist(x, z);
-  const raw = dem(x, z, coarse);
+  const raw = landFlag ? dem(x, z, coarse) : demTiles(x, z, coarse);
   if (!landFlag) {
     // sea: beach face then a Dean profile with a low, rip-cut surf bar (modelled, not measured)
     let h;
@@ -705,7 +735,7 @@ for (const b of BLD) { bin.set([dm(b[0]), dm(b[1]), dm(b[2]), dm(b[3]), Math.rou
 for (const t of TREES) { bin.set([dm(t[0]), dm(t[1]), dm(t[2]), dm(t[3]), t[4]], o); o += 5; }
 fs.writeFileSync(path.join(OUT, 'features.bin'), Buffer.from(bin.buffer));
 const features = {
-  note: 'Local metres: east → +x, north → −z, origin at ORIGIN_LAT/LON (src/landmarks/human/site.ts). Built by tools/build-woonona.mjs from OpenStreetMap (© OpenStreetMap contributors, ODbL) and Terrain Tiles. features.bin: Int16 LE, buildings [x, z, w, d, angle·1e4, h, roof, seed·1e4] (dm) then trees [x, z, h, r, kind] (dm).',
+  note: 'Local metres: east → +x, north → −z, origin at ORIGIN_LAT/LON (src/landmarks/human/site.ts). Built by tools/build-woonona.mjs from OpenStreetMap (© OpenStreetMap contributors, ODbL), the NSW 5 m elevation model (NSW Spatial Services, CC BY) and Terrain Tiles. features.bin: Int16 LE, buildings [x, z, w, d, angle·1e4, h, roof, seed·1e4] (dm) then trees [x, z, h, r, kind] (dm).',
   origin: [LAT0, LON0],
   grids: { fine: { n: FINE.N, cell: FINE.cell }, coarse: { n: COARSE.N, cell: COARSE.cell }, cover: { n: COVER.N, cell: COVER.cell }, coverMid: { n: COVER_MID.N, cell: COVER_MID.cell } },
   counts: { bld: BLD.length, osmBld: osmBuildingCount, trees: TREES.length },

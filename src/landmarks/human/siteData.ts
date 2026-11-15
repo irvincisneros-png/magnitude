@@ -36,7 +36,7 @@ async function decodePNG(buf: ArrayBuffer): Promise<{ w: number; h: number; bpp:
     else if (type === 'IDAT') parts.push(b.subarray(p + 8, p + 8 + len));
     p += 12 + len;
   }
-  const bpp = ct === 6 ? 4 : 3;
+  const bpp = ct === 6 ? 4 : ct === 0 ? 1 : 3;
   let total = 0; for (const q of parts) total += q.length;
   const z = new Uint8Array(total); let o = 0; for (const q of parts) { z.set(q, o); o += q.length; }
   const raw = await inflate(z);
@@ -53,7 +53,7 @@ async function decodePNG(buf: ArrayBuffer): Promise<{ w: number; h: number; bpp:
   }
   return { w, h, bpp, data: out };
 }
-async function fetchPNG(url: string) {
+export async function fetchPNG(url: string) {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`[human] ${url}: ${r.status}`);
   return decodePNG(await r.arrayBuffer());

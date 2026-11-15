@@ -1,0 +1,78 @@
+{
+ "source": "NSW Spatial Services, NSW Imagery Basemap (NSWWebImagery), CC BY",
+ "tiles": "https://portal.spatial.nsw.gov.au/aid/tile/rest/services/NSWWebImagery/MapServer/tile/{z}/{y}/{x}",
+ "origin": [
+  -34.357726,
+  150.919337
+ ],
+ "levels": {
+  "fine": {
+   "centre": [
+    256.0,
+    -512.0
+   ],
+   "half": 1024.0,
+   "sizes": [
+    4096,
+    2048
+   ],
+   "mPerPx": 0.5,
+   "tileZoom": 18,
+   "files": {
+    "4096": "aerial_fine_4096.webp",
+    "2048": "aerial_fine_2048.webp"
+   }
+  },
+  "mid": {
+   "centre": [
+    0.0,
+    -512.0
+   ],
+   "half": 4096.0,
+   "sizes": [
+    2048,
+    1024
+   ],
+   "mPerPx": 4.0,
+   "tileZoom": "export",
+   "files": {
+    "2048": "aerial_mid_2048.webp",
+    "1024": "aerial_mid_1024.webp"
+   }
+  },
+  "coarse": {
+   "centre": [
+    0.0,
+    0.0
+   ],
+   "half": 12800.0,
+   "sizes": [
+    2048
+   ],
+   "mPerPx": 12.5,
+   "tileZoom": "export",
+   "files": {
+    "2048": "aerial_coarse_2048.webp"
+   }
+  }
+ },
+ "sandLinear": [
+  0.5626,
+  0.5096,
+  0.4134
+ ],
+ "vegLinear": [
+  0.1283,
+  0.1271,
+  0.0906
+ ],
+ "keep": {
+  "bld": 8430,
+  "trees": 12617,
+  "bldKept": 7427,
+  "genKept": 3950,
+  "gen": 4953,
+  "treesKept": 9088
+ },
+ "downloaded": "2026-11-15"
+}

@@ -8,6 +8,7 @@
  */
 import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
+import { AERIAL, AERIAL_SOFT, type Aerial, type AerialData } from './aerial';
 import { BUMP, COMMON, FRAME, MAP_O, NOISE_T, SITE, type Shared } from './glsl';
 import { coverAt, siteHeight, sampleCover, type SiteData } from './siteData';
 import type { SiteTextures } from './siteTex';
@@ -34,6 +35,8 @@ ${COMMON}
 ${BUMP}
 ${SITE}
 ${NOISE_T}
+${AERIAL}
+${AERIAL_SOFT}
 varying vec3 vP; varying vec3 vN;
 LOGZ_VARY
 void main() {
@@ -71,9 +74,24 @@ void main() {
   float canN = scrub + forest > 0.001 ? fbmT(q * 0.75 + 2.0, 2) : 0.5;
   float grassW = (1.0 - rock) * (1.0 - sand) * (1.0 - road) * (1.0 - forest * 0.95) * (1.0 - scrub * 0.95) * (1.0 - town);
 
+  // --- the aerial photograph (aerial.ts): the real ground wherever its texels are no longer magnified.
+  // Closer in (its 0.5 m texels would be blurry) the procedural materials below take over, tinted to
+  // the photo's local colour (ratio to each material's mean albedo, kept in ref) so there is no seam.
+  vec4 ph = aerialPhoto(q);
+  vec2 uvF = (q - uAerF.xy) * uAerF.z + 0.5;
+  float fineW = uAerF.w * aerEdge(uvF);
+  float thr = mix(1.6, 0.16, fineW);           // footprint (m/px) at which the photo is sharp enough
+  // (isotropic footprint: on the steep sides of the canopy the derivatives would hand the photo a
+  // grazing, smeared texel and streak it)
+  float fpI = dist * uPx * (1.0 + 60.0 * uBlur);
+  float wP = ph.a * smoothstep(thr * 0.3, thr, fpI);
+  vec3 photoAlb = ph.rgb / max(ph.a, 1e-4) * uAerGain;
+
   // --- albedos (linear)
   float g2 = fbmT(q * 9.0, 2);
-  vec3 alb = vec3(0.0);
+  vec3 alb = vec3(0.0), ref = vec3(0.07, 0.085, 0.032);
+  float wet = 0.0;
+  if (wP < 0.999) {
   if (grassW > 0.001) {
     float g1 = fbmT(q * 0.9, 2);
     vec3 grass = mix(vec3(0.05, 0.08, 0.026), vec3(0.092, 0.112, 0.04), g1);
@@ -97,6 +115,7 @@ void main() {
     vec3 scrubA = mix(vec3(0.028, 0.042, 0.019), vec3(0.07, 0.078, 0.038), sc1) * (0.45 + 0.9 * sc2);
     scrubA = mix(scrubA, vec3(0.1, 0.095, 0.06), smoothstep(0.7, 0.85, vnoiseT(q * 0.35 + 5.0)) * 0.5); // grey-leaved banksia
     alb = mix(alb, scrubA, scrub);
+    ref = mix(ref, vec3(0.045, 0.055, 0.026), scrub);
   }
   // pigface (Carpobrotus) mats and spinifex runners on the sand at the dune's foot
   float foot = cA.r > 0.15 && hs > 1.5 && hs < 4.0 ? smoothstep(0.02, 0.2, cA.g) * (1.0 - smoothstep(0.55, 0.9, cA.g)) : 0.0;
@@ -107,6 +126,7 @@ void main() {
   if (forest > 0.001) {
     vec3 forestA = mix(vec3(0.016, 0.03, 0.013), vec3(0.042, 0.055, 0.024), fbmT(q * 0.02, 2)) * (0.7 + 0.6 * fbmT(q * 0.13, 2));
     alb = mix(alb, forestA, forest);
+    ref = mix(ref, vec3(0.029, 0.042, 0.018), forest);
   }
   if (town > 0.001) {
     vec2 sg = mat2(0.94, 0.34, -0.34, 0.94) * q;
@@ -120,8 +140,8 @@ void main() {
     townA = mix(townA, vec3(0.09, 0.09, 0.085), clamp(street, 0.0, 1.0));
     townA = mix(townA, vec3(0.075, 0.08, 0.065) * (0.8 + 0.4 * hash12(floor(q / 60.0))), smoothstep(0.25, 1.1, fp));
     alb = mix(alb, townA, town);
+    ref = mix(ref, vec3(0.08, 0.075, 0.05), town);
   }
-  float wet = 0.0;
   if (sand > 0.001) {
     vec3 sandA = mix(vec3(0.43, 0.35, 0.22), vec3(0.52, 0.43, 0.29), g2);
     sandA *= 0.88 + 0.24 * fbmT(q * 0.6 + 1.0, 2);
@@ -133,6 +153,7 @@ void main() {
     sandA = mix(sandA, sandA * vec3(0.5, 0.48, 0.45), wet);
     sandA = mix(sandA, sandA * vec3(0.55, 0.62, 0.6), smoothstep(0.0, -1.0, hs)); // seabed under the water
     alb = mix(alb, sandA, sand);
+    ref = mix(ref, mix(vec3(0.47, 0.39, 0.255), vec3(0.235, 0.187, 0.115), wet), sand);
   }
   if (mats > 0.001) {
     vec3 pig = mix(vec3(0.045, 0.075, 0.025), vec3(0.09, 0.1, 0.04), vnoiseT(q * 3.0));
@@ -153,6 +174,7 @@ void main() {
     vec3 sst = mix(vec3(0.2, 0.15, 0.1), vec3(0.34, 0.26, 0.17), fbmT(vec2(hs * 0.15, dot(q, vec2(0.7, 0.7)) * 0.01), 3));
     rockA = mix(rockA, sst, cliff * (1.0 - rockP));
     alb = mix(alb, rockA, rock);
+    ref = mix(ref, mix(vec3(0.09, 0.078, 0.065), vec3(0.27, 0.205, 0.135), cliff * (1.0 - rockP)), rock);
   }
   if (road + path + rail > 0.001) {
     vec3 roadA = vec3(0.055, 0.056, 0.058) * (0.85 + 0.3 * vnoiseT(q * 2.0));
@@ -161,21 +183,34 @@ void main() {
     alb = mix(alb, roadA, road);
     alb = mix(alb, pathA, path);
     alb = mix(alb, railA, rail);
+    ref = mix(ref, vec3(0.055, 0.056, 0.058), road); ref = mix(ref, vec3(0.3, 0.29, 0.26), path); ref = mix(ref, vec3(0.1, 0.09, 0.08), rail);
   }
+  if (ph.a > 0.001) {
+    vec4 soft = aerialPhotoSoft(q);
+    vec3 tint = clamp(soft.rgb / max(soft.a, 1e-4) * uAerGain / max(ref, vec3(0.004)), vec3(0.55), vec3(1.6));
+    alb *= mix(vec3(1.0), tint, ph.a);
+  }
+  } else {
+    // only the wet-sand term below needs this
+    wet = sand > 0.001 ? smoothstep(0.85, 0.25, hs + (nC - 0.5) * 0.2) : 0.0;
+  }
+  alb = mix(alb, photoAlb, wP);
   float rough = rock + scrub * 0.6 + forest * 0.5;
 
   // --- detail normals
   float hb = (g2 - 0.5) * 0.02 * (1.0 - rock);
   if (rock > 0.001) hb += (fbmT(q * 3.0 + p.y * 2.0, 3) - 0.5) * 0.25 * rock;
   if (scrub + forest > 0.001) hb += (scrub + forest) * (canN - 0.5) * 0.6;
-  n = bumpN(n, p, hb);
+  n = bumpN(n, p, hb * (1.0 - wP));
+  // the photo already holds the relief shading and the shadows: light it with a flattened normal
+  n = normalize(mix(n, vec3(0.0, 1.0, 0.0), 0.6 * wP));
   float ndl = dot(n, uSun);
   float sh = figureShadow(p + n * 0.02);
   float veg = (1.0 - rock) * (1.0 - sand) * (1.0 - road) * (1.0 - path);
-  float wrapK = 0.25 * veg;
+  float wrapK = 0.25 * veg * (1.0 - wP);
   vec3 col = alb * uSunCol * clamp((ndl + wrapK) / (1.0 + wrapK), 0.0, 1.0) * sh;
   col += alb * skyIrr(n) * 1.2 * mix(0.75, 1.0, rough);
-  float back = pow(max(dot(v, -uSun), 1e-6), 3.0) * veg * (1.0 - town);
+  float back = pow(max(dot(v, -uSun), 1e-6), 3.0) * veg * (1.0 - town) * (1.0 - wP);
   col += vec3(0.12, 0.2, 0.03) * uSunCol * back * 0.25 * sh;
   if (sand * wet > 0.001) {
     // wet sand reflects the sky; a lacy sheet of swash runs up and down it
@@ -255,6 +290,7 @@ void main() {
 const oceanFrag = /* glsl */ `
 ${COMMON}
 ${NOISE_T}
+${AERIAL}
 varying vec3 vP; varying vec3 vWN; varying float vDepth; varying float vPhase; varying float vCrest; varying float vInland; varying float vShore;
 LOGZ_VARY
 float ggxD(float nh, float a) { float a2 = a * a; float d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
@@ -294,6 +330,22 @@ void main() {
   vec3 floorC = vec3(0.3, 0.26, 0.19) * exp(-depth * vec3(0.55, 0.16, 0.11));
   body += floorC * 0.5 * smoothstep(6.0, 0.5, depth);
   body = mix(body, vec3(0.02, 0.025, 0.012), vInland * 0.8); // tannin-stained lagoon water
+  // the real sandbars and rip channels from the aerial photo (its breaking surf removed when baked), as a
+  // gentle brightness modulation of the procedural water only: the photo's local brightness over its
+  // ~64 m mean (a coarse mip), so its average is exactly 1 and it never darkens or greys the sea. Only
+  // within ~250 m of the shore and well inside the fine (2021) level, fading out long before its edge.
+  if (uAerF.w > 0.5 && vInland < 0.5 && vShore < 250.0) {
+    vec2 uv = (q - uAerF.xy) * uAerF.z + 0.5;
+    vec2 de = abs(uv - 0.5);
+    float w = smoothstep(0.42, 0.28, max(de.x, de.y)) * smoothstep(250.0, 150.0, vShore) * smoothstep(20.0, 60.0, vShore);
+    if (w > 0.0) {
+      const vec3 L = vec3(0.2126, 0.7152, 0.0722);
+      float near = dot(texture2D(tAerF, uv).rgb, L);
+      float mean = dot(textureLod(tAerF, uv, 7.0).rgb, L);
+      float r = clamp(near / max(mean, 1e-4), 0.8, 1.25);
+      body *= 1.0 + (r - 1.0) * 0.7 * w;
+    }
+  }
   vec3 lit = uSunCol * max(uSun.y, 0.0) * 0.55 + skyIrr(vec3(0, 1, 0));
   vec3 col = body * lit * (1.0 - F) + refl * F;
   float crest = smoothstep(0.1, 0.6, vCrest);
@@ -388,14 +440,15 @@ export class Terrain {
   private meshes: THREE.Mesh[] = [];
   private rockBase: THREE.BufferGeometry;
 
-  constructor(shared: Shared, private D: SiteData, tex: SiteTextures) {
-    this.terrainMat = new THREE.ShaderMaterial({ vertexShader: terrainVert, fragmentShader: terrainFrag, uniforms: { ...shared, ...tex.uniforms } });
+  /** veg: photo vegetation on the land-cover grid (aerial_veg.png): the canopy relief only rises under real canopy */
+  constructor(shared: Shared, private D: SiteData, tex: SiteTextures, aer: Aerial, private veg: AerialData | null) {
+    this.terrainMat = new THREE.ShaderMaterial({ vertexShader: terrainVert, fragmentShader: terrainFrag, uniforms: { ...shared, ...tex.uniforms, ...aer.uniforms } });
     // the swell arrives from the east-south-east, square to Woonona Beach (which faces ~E by S)
     const az = ((Number((D.measured as { faceBearingDeg?: number }).faceBearingDeg) || 100) * Math.PI) / 180;
     const swell = new THREE.Vector2(-Math.sin(az), Math.cos(az)).normalize(); // travelling towards the shore
     this.oceanMat = new THREE.ShaderMaterial({
       vertexShader: oceanVert, fragmentShader: oceanFrag,
-      uniforms: { ...shared, ...tex.uniforms, uSwell: { value: swell } },
+      uniforms: { ...shared, ...tex.uniforms, ...aer.uniforms, uSwell: { value: swell } },
     });
     this.rockMat = new THREE.ShaderMaterial({ vertexShader: rockVert, fragmentShader: rockFrag, uniforms: { ...shared } });
     this.rockBase = makeRockGeometry();
@@ -427,6 +480,7 @@ export class Terrain {
             const scR = sc + (vnoise2(mx / 1.6 + 7.0, mz / 1.6) - 0.5) * 0.45; // ragged outline
             can = (THREE.MathUtils.smoothstep(scR, 0.38, 0.62) * 1.7 * lee * hum + THREE.MathUtils.smoothstep(wd, 0.25, 0.75) * (7 + 5 * fbm2(mx / 9, mz / 9, 3))) * open;
             if (r < 6) can *= THREE.MathUtils.smoothstep(r, 3, 6);
+            if (this.veg) can *= THREE.MathUtils.smoothstep(vegAt(this.veg, D, mx, mz), 0.15, 0.55);
           }
         }
         pos[k * 3] = x; pos[k * 3 + 1] = heightH(D, x, z) + can; pos[k * 3 + 2] = z;
@@ -506,6 +560,15 @@ export class Terrain {
     this.rockBase.dispose();
     this.terrainMat.dispose(); this.oceanMat.dispose(); this.rockMat.dispose();
   }
+}
+
+/** Photo vegetation 0..1 at map (x, z) (bilinear on the land-cover grid; 1 outside it, where the photo is not consulted). */
+function vegAt(A: AerialData, D: SiteData, x: number, z: number) {
+  const n = A.vegN, G = D.G.cover;
+  const fx = (x + G.half) / G.cell - 0.5, fz = (z + G.half) / G.cell - 0.5;
+  if (n !== G.n || fx < 0 || fz < 0 || fx > n - 1.001 || fz > n - 1.001) return 1;
+  const i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j, V = A.veg;
+  return (V[j * n + i] * (1 - u) * (1 - v) + V[j * n + i + 1] * u * (1 - v) + V[(j + 1) * n + i] * (1 - u) * v + V[(j + 1) * n + i + 1] * u * v) / 255;
 }
 
 function ringIndex(nRings: number, S: number) {

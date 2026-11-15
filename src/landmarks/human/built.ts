@@ -7,11 +7,13 @@
  */
 import * as THREE from 'three';
 import type { Quality } from '../../engine/types';
+import { AERIAL, type Aerial } from './aerial';
 import { COMMON, FRAME, MAP_O, type Shared } from './glsl';
 import { siteHeight, type SiteData } from './siteData';
 
 const bldVert = /* glsl */ `
 ${COMMON}
+${AERIAL}
 attribute vec4 aSlot;           // template: sx, sz (±1), kind (0 wall, 1 eave, 2 ridge), top (walls)
 attribute vec3 aNrm;            // wall normal in the template
 attribute vec4 aB0;             // x, y, z, angle
@@ -19,8 +21,19 @@ attribute vec4 aB1;             // w (long side), d, wall height, roof (0 flat, 
 attribute float aSeed;
 uniform float uShow;
 varying vec3 vP; varying vec3 vN; varying vec3 vL; varying float vSeed; varying float vKind; varying float vRoof;
+varying vec4 vPhoto;
 LOGZ_VARY
 void main() {
+  // the roof's colour in the aerial photograph (at the footprint's centre), unless a tree hides it there
+  vPhoto = vec4(0.0);
+  if (aSlot.z > 0.5) {
+    vec4 ph = aerialPhoto(aB0.xz - MAP_O);
+    if (ph.a > 0.01) {
+      vec3 c = ph.rgb / ph.a * uAerGain;
+      float green = (2.0 * c.g - c.r - c.b) / max(c.r + c.g + c.b, 1e-4);
+      vPhoto = vec4(c, ph.a * (1.0 - smoothstep(0.04, 0.12, green)));
+    }
+  }
   float w = aB1.x, d = aB1.y, H = aB1.z * uShow, roof = aB1.w;
   vec3 l;
   if (aSlot.z < 0.5) {
@@ -47,6 +60,7 @@ void main() {
 const bldFrag = /* glsl */ `
 ${COMMON}
 varying vec3 vP; varying vec3 vN; varying vec3 vL; varying float vSeed; varying float vKind; varying float vRoof;
+varying vec4 vPhoto;
 LOGZ_VARY
 vec3 roofCol(float k) {
   // Illawarra roofs: terracotta and brown tiles, and Colorbond steel (charcoal, grey, off-white)
@@ -89,6 +103,8 @@ void main() {
     alb = roofCol(k1);
     alb *= 0.85 + 0.3 * vnoise(p.xz * 0.9);
     if (vRoof < 0.5) alb = mix(vec3(0.3, 0.3, 0.29), alb, 0.5); // flat roofs: pale membrane / steel
+    // roofs take their real colour from the photo (the photo's own shading is a little brighter than an albedo)
+    alb = mix(alb, vPhoto.rgb * 0.85 * (0.9 + 0.2 * vnoise(p.xz * 0.9)), vPhoto.a * 0.85);
   }
   float ndl = dot(n, uSun);
   vec3 col = alb * uSunCol * max(ndl, 0.0) + alb * skyIrr(n) * 1.15;
@@ -173,8 +189,9 @@ export class Built {
   private meshes: THREE.Mesh[] = [];
   private uShow = { value: 1 };
 
-  constructor(shared: Shared, private D: SiteData) {
-    this.bldMat = new THREE.ShaderMaterial({ vertexShader: bldVert, fragmentShader: bldFrag, side: THREE.DoubleSide, uniforms: { ...shared, uShow: this.uShow } });
+  /** keep: one byte per building (aerial_keep.bin): 0 = a generated house that the aerial photo contradicts. */
+  constructor(shared: Shared, private D: SiteData, aer: Aerial, private keep: Uint8Array | null) {
+    this.bldMat = new THREE.ShaderMaterial({ vertexShader: bldVert, fragmentShader: bldFrag, side: THREE.DoubleSide, uniforms: { ...shared, ...aer.uniforms, uShow: this.uShow } });
     this.poolMat = new THREE.ShaderMaterial({ vertexShader: poolVert, fragmentShader: poolFrag, side: THREE.DoubleSide, uniforms: { ...shared } });
   }
 
@@ -186,6 +203,7 @@ export class Built {
     const b0 = new Float32Array(n * 4), b1 = new Float32Array(n * 4), sd = new Float32Array(n);
     let k = 0;
     for (let i = 0; i < n; i++) {
+      if (this.keep && !this.keep[i]) continue;
       let [x, z, w, d, a, h, roof, seed] = B.subarray(i * 8, i * 8 + 8);
       if (d > w) { const t = w; w = d; d = t; a += Math.PI / 2; }
       // sit on the lowest corner so nothing floats on a slope

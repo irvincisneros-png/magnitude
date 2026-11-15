@@ -1,9 +1,75 @@
 # Human landmark — data credits
 
 The place in this scene is the real Woonona Beach, Woonona NSW 2517 (northern Wollongong), built at
-true scale from open data by `tools/build-woonona.mjs`. The place is authored procedurally from the
-data: no photographs, satellite imagery or AI-generated images are used. The only photographic
-textures are those of the person (a scanned-and-textured avatar, see "The person" below).
+true scale from open data by `tools/build-woonona.mjs`. The ground's colour, from a few metres up, is a
+real aerial photograph of the place (NSW Spatial Services, below), draped over the terrain by
+`tools/build-woonona-imagery.py` and `aerial.ts`; close to the person, where the photo is too coarse,
+procedural sand, dune and grass materials take over, tinted to the photo's colour. The sea is procedural
+(animated swell and surf); the photo only adds a gentle, mean-neutral brightness modulation (sandbars,
+rip channels) within ~250 m of the shore, with its breaking waves removed when baked. No AI-generated images are used.
+The other photographic textures are those of the person (a scanned-and-textured avatar, see "The person").
+
+**Attribution shown in the app:** Aerial photography and elevation © State of New South Wales (Spatial
+Services, a business unit of the Department of Customer Service NSW), CC BY 4.0, extracted 15 November
+2026; map data © OpenStreetMap contributors (ODbL).
+
+## Aerial photography — NSW Spatial Services (NSW Imagery)
+
+© State of New South Wales (Spatial Services, a business unit of the Department of Customer Service NSW).
+For current information go to spatial.nsw.gov.au. ©Department of Customer Service 2026-11-15 (date of
+extraction). Licence: Creative Commons Attribution 4.0, https://creativecommons.org/licenses/by/4.0/
+
+Licence evidence (checked 15 November 2026):
+- Spatial Web Services terms and conditions, clause 3.1: data accessed from the web services is
+  "subject to the Creative Commons Attribution By Licence", with the additional term that Spatial
+  Services is attributed as "©Department of Customer Service [date of extraction]".
+  https://www.spatial.nsw.gov.au/products_and_services/web_services/terms_and_conditions (read from the
+  Internet Archive copy of 14 January 2025; the live page now redirects to nsw.gov.au).
+- Spatial Services copyright page: material is "licensed under the Creative Commons Attribution 4.0
+  licence", and requests attribution as "© State of New South Wales (Spatial Services, a business unit
+  of the Department of Customer Service NSW). For current information go to spatial.nsw.gov.au."
+  https://www.spatial.nsw.gov.au/copyright (Internet Archive copy of 14 December 2025).
+- Data.NSW catalogue entry "NSW Imagery": licence "Creative Commons Attribution" (cc-by).
+  https://data.nsw.gov.au/data/dataset/nsw-imagery
+- Caveats, recorded honestly: the copyright page excludes "images, photographs or illustrations" on its
+  *website* (the imagery here comes from the web services, which clause 3.1 licenses); older Spatial
+  Services information sheets (2018) reportedly linked the no-derivatives CC BY-ND 4.0 deed; the newer
+  basemap's catalogue item names third-party satellite imagery (SPOT, © Airbus DS) for its small-scale
+  layer, which is why the coarse levels here come from the older service instead (see below); and clause
+  2.1.6 of the terms asks users not to retrieve the service with robots — the bake made about 440 ordinary
+  tile requests once (289 used; the rest an abandoned trial of coarser zooms), sequentially with a pause,
+  plus a handful of export requests, and caches them.
+
+What was used:
+
+| Level | Extent (local metres, centre / square) | Resolution | Source | Imagery |
+|---|---|---|---|---|
+| fine | centre (256, −512), 2048 m | 0.5 m/px (4096², and a 2048² copy) | NSW Imagery Basemap cached tiles, zoom 18 (289 tiles): https://portal.spatial.nsw.gov.au/aid/tile/rest/services/NSWWebImagery/MapServer | Wollongong, captured 4 March 2021, 7 cm (NSW_Imagery_Dates "BestImageryDates" layer at the standing spot: WOLLONGONG, SydneyCon, 2021-03-04, 7 cm) |
+| mid | centre (0, −512), 8192 m | 4 m/px (2048², and 1024²) | NSW_Imagery map service, one `export` in EPSG:4326: https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Imagery/MapServer | Spatial Services' ADS40 survey of 30 March 2008 (WOLLONGONG_ADS40_SC_20080330) — the only imagery that service draws at pixel sizes over 2 m (its Footprint layer) |
+| coarse | centre (0, 0), 25.6 km | 12.5 m/px (2048²) | as mid | ADS40 2008 (Wollongong and Port Hacking blocks); on the plateau's far west and at sea, the service's Landsat 8 2014 fill (l8olps_nsw_2014; Landsat is public domain, courtesy of the U.S. Geological Survey) |
+
+Processing (`tools/build-woonona-imagery.py`, no painting, no AI): bilinear resampling onto the scene's
+local metre grid (the same tangent-plane projection as the map data, so roads, coastline and buildings
+line up); over the open sea, breaking-wave whitewash replaced by the surrounding water colour so the
+runtime's animated surf is the only surf; the Landsat fill colour-matched to the aerial survey with a
+smooth gain field; the coarser levels colour-matched to the finer ones where they overlap; WebP
+(quality 88 fine, 85 others). Files: `public/assets/human/aerial_fine_4096.webp`, `aerial_fine_2048.webp`,
+`aerial_mid_2048.webp`, `aerial_mid_1024.webp`, `aerial_coarse_2048.webp`, `aerial.json` (extents and
+colour statistics) and `aerial_keep.bin` (which generated houses and placed plants agree with the photo:
+a generated house on photo lawn or bush, or a plant on photo sand, road or roof, is hidden).
+
+## Elevation — NSW 5 m elevation model (NSW Spatial Services)
+
+Same licence and attribution as the aerial photography (Spatial Web Services terms, clause 3.1;
+copyright text in the service: "DFSI 2019").
+
+- Source: NSW_5M_Elevation image service, "5 metre post spacing elevation derived from stereo imagery",
+  https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_5M_Elevation/ImageServer (two
+  `exportImage` requests in EPSG:4326, float32: the fine grid's 2.6 km square at 2.5 m and the coarse
+  grid's 20.9 km square at 20 m), fetched by `tools/fetch-nsw-dem.py` on 15 November 2026.
+- Used by `tools/build-woonona.mjs` for all land inside the height grids (it resolves the foredune, the
+  railway embankment, creeks and road cuttings that the terrain tiles blur away). The terrain tiles
+  below still supply the deep sea floor.
 
 ## Map data — OpenStreetMap
 
@@ -25,7 +91,7 @@ https://www.openstreetmap.org/copyright
 - Derived database: `public/assets/human/cover*.png`, `features.json`, `features.bin` are derived from
   OpenStreetMap data and are available under the same ODbL terms.
 
-## Elevation — Terrain Tiles (AWS Open Data)
+## Elevation — Terrain Tiles (AWS Open Data) — sea floor and fallback
 
 - Source: Terrain Tiles on AWS, terrarium PNG encoding,
   `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png`
