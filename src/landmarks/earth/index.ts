@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import type { FrameState, InitContext, Landmark, LandmarkFactory, LandmarkMeta, Quality } from '../../engine/types';
 import { anchorBasis, geoToLocalPoint, localSkyDir, polarAxisLocal, WOLLONGONG } from './geo';
+import { fetchPNG } from '../human/siteData';
 import { planetFrag, planetVert, starFrag, starVert, UNIT_M } from './shaders';
 
 const meta: LandmarkMeta = {
@@ -55,6 +56,9 @@ const COAST_OFF_M: [number, number] = [-18.95, 7.99];
 const ZOOM_PHOTO = -1.3;
 /** The human scene's dry-sand albedo its photo is calibrated to (src/landmarks/human/aerial.ts SAND_ALB). */
 const SAND_ALB = [0.47, 0.39, 0.255];
+/** The human scene's coarse height grid, centred on the anchor (features.json grids.coarse). */
+const HGT = { file: 'height_coarse.png', cell: 40 };
+const reliefSteps = (q: Quality) => (q === 'low' ? 0 : 8);
 const midFile = (q: Quality) => (q === 'high' ? 2048 : q === 'medium' ? 1024 : 0);
 interface AerialLevel { centre: [number, number]; half: number; files: Record<string, string> }
 interface AerialJson { levels: { mid: AerialLevel; coarse: AerialLevel }; sandLinear: [number, number, number] }
@@ -119,6 +123,12 @@ const factory: LandmarkFactory = () => {
     uAerGain: { value: new THREE.Vector3(1, 1, 1) },
     uLook: { value: 1 },
     uPatch: { value: 1 },
+    uSoftM: { value: 0 },
+    tHgt: { value: null as THREE.Texture | null },
+    uHgt: { value: new THREE.Vector4(0, 0, 1, 0) },
+    uRelief: { value: 1 },
+    uSlope: { value: 1 },
+    uCloudHole: { value: 1 },
   };
 
   // ---------------------------------------------------------------- near-field photograph (lazy)
@@ -126,6 +136,20 @@ const factory: LandmarkFactory = () => {
   let aerC: THREE.Texture | null = null;
   let aerM: { size: number; t: THREE.Texture } | null = null;
   let aerBusy = false;
+  let hgt: THREE.DataTexture | null = null;
+  /** The human scene's coarse heights (height_coarse.png: (R·256 + G) / 50 − 100 m, 512² × 40 m, row 0 north) as a half-float texture. */
+  const loadHeights = async () => {
+    const p = await fetchPNG(assetUrl(`../human/${HGT.file}`));
+    const n = p.w;
+    const data = new Uint16Array(n * n);
+    for (let k = 0; k < n * n; k++) data[k] = THREE.DataUtils.toHalfFloat((p.data[k * p.bpp] * 256 + p.data[k * p.bpp + 1]) / 50 - 100);
+    const t = new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.HalfFloatType);
+    t.minFilter = t.magFilter = THREE.LinearFilter;
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    t.generateMipmaps = false;
+    t.needsUpdate = true;
+    return { t, half: (n * HGT.cell) / 2 };
+  };
   const aerLoad = async (file: string) => {
     const t = await loader.loadAsync(assetUrl(`../human/${file}`));
     t.colorSpace = THREE.SRGBColorSpace;
@@ -159,6 +183,13 @@ const factory: LandmarkFactory = () => {
         if (disposed) { t.dispose(); return; }
         aerC = t; uniforms.tAerC.value = t; setLevel(uniforms.uAerC.value, J.levels.coarse, true);
       }
+      if (!hgt) {
+        try {
+          const h = await loadHeights();
+          if (disposed) { h.t.dispose(); return; }
+          hgt = h.t; uniforms.tHgt.value = h.t; uniforms.uHgt.value.set(0, 0, 1 / (2 * h.half), 1);
+        } catch (err) { console.warn('[earth] near-field heights unavailable', err); }
+      }
       const want = midFile(tier);
       if (want !== (aerM?.size ?? 0)) {
         if (!want) { aerM?.t.dispose(); aerM = null; uniforms.tAerM.value = null; uniforms.uAerM.value.w = 0; return; }
@@ -179,7 +210,7 @@ const factory: LandmarkFactory = () => {
     vertexShader: planetVert,
     fragmentShader: planetFrag,
     uniforms,
-    defines: { ATM_STEPS: 14, DETAIL_OCT: 9 },
+    defines: { ATM_STEPS: 14, DETAIL_OCT: 9, RELIEF_STEPS: 8 },
     transparent: true,
     depthTest: false,
     depthWrite: false,
@@ -283,6 +314,7 @@ const factory: LandmarkFactory = () => {
   const applyTierShader = (qt: Quality) => {
     planetMat.defines.ATM_STEPS = steps(qt);
     planetMat.defines.DETAIL_OCT = octaves(qt);
+    planetMat.defines.RELIEF_STEPS = reliefSteps(qt);
     planetMat.needsUpdate = true;
   };
 
@@ -345,10 +377,15 @@ const factory: LandmarkFactory = () => {
         starMat.uniforms.uScale.value = renderer ? renderer.getPixelRatio() : 1;
       }
       // the near field: the human scene's look (light, sea, haze) hands over to this scene's own by s ≈ 5.2;
-      // its photograph is draped until s ≈ 5.1 (colour-matched to Blue Marble at its edges and from afar)
+      // its photograph (blurred towards Blue Marble's resolution from s ≈ 3.95) is draped until s ≈ 4.65;
+      // the terrain relief is ray-marched until s ≈ 4.3 and slope-lit until s ≈ 4.95; the clouds over the anchor return over s ≈ 4.2–4.95 (colour-matched to Blue Marble at its edges and from afar)
       const z = frame.zoom;
       uniforms.uLook.value = 1 - THREE.MathUtils.smoothstep(z, -3.35, -1.9);
-      uniforms.uPatch.value = 1 - THREE.MathUtils.smoothstep(z, -3.0, -2.0);
+      uniforms.uPatch.value = 1 - THREE.MathUtils.smoothstep(z, -2.9, -2.45);
+      uniforms.uSoftM.value = 700 * THREE.MathUtils.smoothstep(z, -3.15, -2.5);
+      uniforms.uRelief.value = 1 - THREE.MathUtils.smoothstep(z, -3.1, -2.8);
+      uniforms.uSlope.value = 1 - THREE.MathUtils.smoothstep(z, -2.7, -2.15);
+      uniforms.uCloudHole.value = 1 - THREE.MathUtils.smoothstep(z, -2.9, -2.15);
       if (z < ZOOM_PHOTO && aerJson !== null && !aerBusy && aerTries < 3 && (!aerC || midFile(tier) !== (aerM?.size ?? 0))) {
         aerTries++;
         void ensurePhoto().then(() => { if (aerC && midFile(tier) === (aerM?.size ?? 0)) aerTries = 0; });
@@ -381,6 +418,7 @@ const factory: LandmarkFactory = () => {
       coast?.dispose(); coast = null;
       aerC?.dispose(); aerC = null; aerM?.t.dispose(); aerM = null;
       uniforms.tAerC.value = null; uniforms.tAerM.value = null;
+      hgt?.dispose(); hgt = null; uniforms.tHgt.value = null;
       quadGeo.dispose(); planetMat.dispose();
       if (stars) stars.geometry.dispose();
       starMat.dispose();

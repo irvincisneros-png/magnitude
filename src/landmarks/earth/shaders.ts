@@ -72,6 +72,12 @@ export const planetFrag = /* glsl */ `
   uniform vec3 uAerGain;      // the human scene's photo calibration (dry sand → its sand albedo)
   uniform float uLook;        // 0..1: shade the near field with the human scene's light, sea and haze
   uniform float uPatch;       // 0..1: drape the photograph
+  uniform float uSoftM;       // blur the photograph to at least this footprint (m) as it shrinks into Blue Marble
+  uniform sampler2D tHgt;     // the human scene's coarse terrain heights (m above sea, 40 m cells, row 0 north)
+  uniform vec4 uHgt;          // centre x, z (local metres), 1 / (2·half), loaded
+  uniform float uRelief;      // 0..1: ray-march the near terrain's relief (escarpment, headlands)
+  uniform float uSlope;       // 0..1: light the near field with the terrain's slopes
+  uniform float uCloudHole;   // 0..1: clear sky over the anchor while zoomed in
   varying vec3 vDir;
 
   // Mean Blue Marble land albedo ÷ calibrated photo albedo over the photo's land (measured offline, ±11 km).
@@ -97,6 +103,11 @@ export const planetFrag = /* glsl */ `
     return c + vec3(0.16, 0.11, 0.06) * max(dot(n, uSun), 0.0);
   }
   // how much of the human look applies at local metres qm (it is confined to the region around the anchor)
+  /** Terrain height (m above sea) at local metres qm, faded out 12–22 km from the anchor; 0 at sea. */
+  float reliefH(vec2 qm) {
+    float h = max(textureLod(tHgt, (qm - uHgt.xy) * uHgt.z + 0.5, 0.0).r, 0.0);
+    return h * (1.0 - smoothstep(12000.0, 22000.0, length(qm)));
+  }
   float lookAt(vec2 qm) { return uLook * (1.0 - smoothstep(20000.0, 70000.0, length(qm))); }
 
   // ------------------------------------------------------------ precise sphere maths
@@ -106,6 +117,8 @@ export const planetFrag = /* glsl */ `
     vec3 d = p + vec3(0.0, R_E, 0.0);
     return qf(p) / (length(d) + R_E);
   }
+  // height of p above the relief (m), for the relief march
+  float aboveRelief(vec3 p) { return heightOf(p) * UNIT_M - reliefH(p.xz * UNIT_M) * uRelief; }
   // Ray vs sphere of radius R+a centred on C. dR2 = (R+a)^2 - R^2. Returns false on a miss.
   bool shell(vec3 o, vec3 d, float dR2, out float t0, out float t1) {
     float b = dot(d, o) + R_E * d.y;
@@ -197,7 +210,7 @@ export const planetFrag = /* glsl */ `
     return vec2((lon - uRegion.x) / uRegion.z, 1.0 - (uRegion.y - lat) / uRegion.z);
   }
 
-  float cloudCover(vec2 uv, Grad g, vec3 gr, float fp, float wdC) {
+  float cloudCover(vec2 uv, Grad g, vec3 gr, float fp, float wdC, vec2 qm) {
     float c = textureGrad(tClouds, uv, g.dx, g.dy).r;
     float cov = smoothstep(0.16, 0.92, c);
     #if DETAIL_OCT > 0
@@ -217,6 +230,8 @@ export const planetFrag = /* glsl */ `
       cov = mix(cov, c2, wdC);
     }
     #endif
+    // zoomed in, a clear sky over the anchor (20–60 km), so the hand-over coast is not veiled
+    if (uCloudHole > 0.0) cov *= mix(1.0, smoothstep(20000.0, 60000.0, length(qm)), uCloudHole);
     return clamp(cov, 0.0, 1.0);
   }
 
@@ -255,6 +270,43 @@ export const planetFrag = /* glsl */ `
     float tc0, tc1;
     bool hitC = shell(ro, rd, CLOUD_H * (2.0 * R_E + CLOUD_H), tc0, tc1);
     float tCloud = tc0 > 0.0 ? tc0 : tc1; // from below the layer, use the far root
+    #if RELIEF_STEPS > 0
+    // Near-field relief (zoomed in only): march the ray through the terrain heights within 22 km of the
+    // anchor, between the top of the relief and the sphere, then bisect and interpolate the crossing.
+    if (hitG && uRelief > 0.0 && uHgt.w > 0.5) {
+      const float HMAX = 560.0 / UNIT_M, RCYL = 22000.0 / UNIT_M;
+      float th0, th1;
+      if (shell(ro, rd, HMAX * (2.0 * R_E + HMAX), th0, th1)) {
+        float a = max(th0, 0.0), b = tg0;
+        // clip to the vertical cylinder of radius RCYL around the anchor
+        vec2 o2 = ro.xz, d2 = rd.xz;
+        float A = dot(d2, d2), B = dot(o2, d2), C = dot(o2, o2) - RCYL * RCYL;
+        float disc = B * B - A * C;
+        if (disc > 0.0 && A > 1e-12) {
+          float sq = sqrt(disc);
+          a = max(a, (-B - sq) / A); b = min(b, (-B + sq) / A);
+          if (b > a) {
+            float dt = (b - a) / float(RELIEF_STEPS);
+            float lo = a, dlo = aboveRelief(ro + rd * a);
+            for (int i = 1; i <= RELIEF_STEPS; i++) {
+              float t = a + dt * float(i);
+              float d = aboveRelief(ro + rd * t);
+              if (d <= 0.0 && dlo > 0.0) {
+                float hi = t, dhi = d;
+                for (int k = 0; k < 5; k++) {
+                  float m = 0.5 * (lo + hi), dm = aboveRelief(ro + rd * m);
+                  if (dm <= 0.0) { hi = m; dhi = dm; } else { lo = m; dlo = dm; }
+                }
+                tg0 = mix(lo, hi, clamp(dlo / max(dlo - dhi, 1e-6), 0.0, 1.0));
+                break;
+              }
+              lo = t; dlo = d;
+            }
+          }
+        }
+      }
+    }
+    #endif
     hitC = hitC && tCloud > 0.0 && (!hitG || tCloud < tg0) && uCloudFade > 0.001;
 
     // Surface coordinates (computed for every pixel so derivatives stay well defined)
@@ -339,6 +391,14 @@ export const planetFrag = /* glsl */ `
         vec2 sl = vec2((hE - hW) / (2.0 * spanM * cl), (hN - hS) / (2.0 * spanM)) * 6400.0 * ex;
         nn = normalize(n - sl.x * eastL - sl.y * northL);
       }
+      // near the anchor: the slopes of the human scene's terrain (40 m grid) instead of the 500 m relief
+      if (uSlope > 0.0 && uHgt.w > 0.5) {
+        const float E = 40.0;
+        float gx = (reliefH(qA + vec2(E, 0.0)) - reliefH(qA - vec2(E, 0.0))) / (2.0 * E);
+        float gz = (reliefH(qA + vec2(0.0, E)) - reliefH(qA - vec2(0.0, E))) / (2.0 * E); // z = south
+        vec3 nR = normalize(n - gx * eastL + gz * northL);
+        nn = normalize(mix(nn, nR, uSlope * (1.0 - smoothstep(10000.0, 22000.0, length(qA)))));
+      }
 
       // Signed distance to the shoreline in metres (+ = land). Within ~14 km of the origin it comes
       // from the OpenStreetMap coastline (good to a few metres); elsewhere from the imagery's water mask.
@@ -361,7 +421,7 @@ export const planetFrag = /* glsl */ `
       vec3 gs = toGeo(ns);
       vec2 uvs = geoUV(gs) + vec2(uCloudRot / (2.0 * PI), 0.0);
       vec3 gsr = vec3(cr * gs.xy, gs.z);
-      float shadowCov = cloudCover(uvs, gd, gsr, fp * 4.0, wd) * uCloudFade; // coarser detail is enough for soft shadows
+      float shadowCov = cloudCover(uvs, gd, gsr, fp * 4.0, wd, Ps.xz * UNIT_M) * uCloudFade; // coarser detail is enough for soft shadows
       float sh = 1.0 - 0.75 * shadowCov;
 
       vec3 Ts = sunTrans(0.0, R_E, mu);
@@ -407,11 +467,14 @@ export const planetFrag = /* glsl */ `
         vec2 uvC = (qA - uAerC.xy) * uAerC.z + 0.5;
         float wPh = smoothstep(0.5, 0.24, max(abs(uvC.x - 0.5), abs(uvC.y - 0.5))) * uPatch;
         if (wPh > 0.0) {
-          vec3 ph = textureGrad(tAerC, uvC, dqx * uAerC.z, dqy * uAerC.z).rgb;
+          // as it shrinks, blur it towards Blue Marble's effective resolution (gradients widened to uSoftM)
+          float gl = max(max(length(dqx), length(dqy)), 1e-3);
+          vec2 gx = dqx * max(1.0, uSoftM / gl), gy = dqy * max(1.0, uSoftM / gl);
+          vec3 ph = textureGrad(tAerC, uvC, gx * uAerC.z, gy * uAerC.z).rgb;
           if (uAerM.w > 0.5) {
             vec2 uvM = (qA - uAerM.xy) * uAerM.z + 0.5;
             float wM = smoothstep(0.5, 0.4, max(abs(uvM.x - 0.5), abs(uvM.y - 0.5)));
-            if (wM > 0.0) ph = mix(ph, textureGrad(tAerM, uvM, dqx * uAerM.z, dqy * uAerM.z).rgb, wM);
+            if (wM > 0.0) ph = mix(ph, textureGrad(tAerM, uvM, gx * uAerM.z, gy * uAerM.z).rgb, wM);
           }
           ph *= uAerGain;
           alb = mix(alb, ph * K_BM, wPh);
@@ -494,7 +557,7 @@ export const planetFrag = /* glsl */ `
       vec3 gc = toGeo(nc);
       vec3 gcr = vec3(cr * gc.xy, gc.z);
       float wdC = smoothstep(1.0, 4.0, (2.0 / 2048.0 * PI * R_E) / fp) * uDetail;
-      ca = cloudCover(uvc, gdc, gcr, fp, wdC) * uCloudFade;
+      ca = cloudCover(uvc, gdc, gcr, fp, wdC, Pc.xz * UNIT_M) * uCloudFade;
       float muc = dot(nc, L);
       vec3 Tc = sunTrans(CLOUD_H, R_E + CLOUD_H, muc);
       float lit = smoothstep(-0.08, 0.35, muc);
@@ -541,8 +604,10 @@ export const planetFrag = /* glsl */ `
       // near field: the human scene's aerial perspective instead of the full atmosphere
       float camM = max(camH, 0.0) * UNIT_M;
       if (hitG) {
-        float look = lookAt(qA);
-        if (look > 0.0) {
+        // all the way to the horizon (not only near the anchor): the far ground is fully hazed in the human
+        // scene's model, which then meets its sky without the blue band the full atmosphere leaves there
+        float look = uLook;
+        {
           float od = tg0 * UNIT_M * exp(-0.5 * camM / 1400.0) / 21000.0;
           vec3 hz = skyColH(normalize(vec3(rd.x, max(rd.y, 0.015), rd.z))) * 1.05;
           col = mix(col, mix(surf, hz, 1.0 - exp(-od)), look);
