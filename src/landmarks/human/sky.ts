@@ -184,7 +184,8 @@ export class Sky {
     this.skyMat.uniforms.uBackdrop.value = backdrop;
     this.skyMat.uniforms.uInvProj.value.copy(cam.projectionMatrixInverse);
     this.skyMat.uniforms.uCamRot.value.extractRotation(cam.matrixWorld);
-    const op = THREE.MathUtils.smoothstep(zoom, 1.9, 2.5) * (1 - THREE.MathUtils.smoothstep(zoom, 3.05, 3.35));
+    // gone (the camera has risen through them) before the hand-over to the Earth scene, which has its own clouds
+    const op = THREE.MathUtils.smoothstep(zoom, 1.9, 2.5) * (1 - THREE.MathUtils.smoothstep(zoom, 2.75, 3.05));
     this.wispMat.uniforms.uOpacity.value = op;
     this.wisps.visible = op > 0.002;
     // dissolve this layer from the edges in so the Earth scene (same coast) shows through

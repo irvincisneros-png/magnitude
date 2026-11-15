@@ -2,7 +2,7 @@
 
 All imagery is NASA, public domain (NASA imagery is not copyrighted; credit requested as "NASA Earth Observatory"). Downloaded 2026-11-13 with `curl` from NASA's official asset host (`assets.science.nasa.gov`, which now serves the Visible Earth / Earth Observatory collections), then resized/cropped locally with Python (Pillow). Files live in `public/assets/earth/` (about 4.8 MB in total).
 
-The scene's origin is the standing spot at Woonona Beach, NSW (−34.357798°, 150.919131°), shared with the human landmark.
+The scene's origin is the standing spot at Woonona Beach, NSW (−34.357726°, 150.919337°), shared with the human landmark (`src/landmarks/human/site.ts`). (Until 15 November 2026 it was 21 m away at −34.357798°, 150.919131°; `coast_sdf.png` is still centred there, which the shader allows for.)
 
 | File(s) | What | Source | Processing |
 |---|---|---|---|
@@ -15,3 +15,9 @@ The scene's origin is the standing spot at Woonona Beach, NSW (−34.357798°, 1
 | `coast_sdf.png` | Signed distance (metres, positive on land) to the coastline in a 28 km square centred on the Woonona Beach origin; 1024², 27 m cells, 4 m per grey level, ±508 m | © OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright — `natural=coastline` ways exported via the Overpass API by the human landmark's builder (raw file `coast.json`, see `src/landmarks/human/CREDITS.md`) | Coastline ways joined (land on the left), plus islets; exact point-to-segment distances, signed by inside/outside test (scratchpad script `coast_sdf.py`) |
 
 Not from data (procedural, in `shaders.ts`): close-up land cover, suburbs, surf and waves, cloud billows and wisps (scale-adaptive noise layered on the imagery once it runs out of resolution); the atmosphere (single-scattering model with standard Rayleigh/Mie/ozone coefficients, red Rayleigh coefficient slightly lowered and haze scaled for readability); the star backdrop (random, not a real catalogue).
+
+## Near field: NSW aerial photography (shared with the human landmark)
+
+While zoomed in (up to a view about 500 km high), the ground around the anchor is draped with the human landmark's aerial photograph — `public/assets/human/aerial_coarse_2048.webp` (25.6 km square, 12.5 m/px) and, on medium/high, `aerial_mid_1024.webp` / `aerial_mid_2048.webp` (8.2 km square, 4 m/px), placed by the extents in `public/assets/human/aerial.json`. The files are the human landmark's own (no copies; fetched lazily only when zoomed in); their provenance and processing are documented in `src/landmarks/human/CREDITS.md`. They are colour-matched to Blue Marble at runtime (a constant per-channel gain measured over their land, and a wide soft edge); only their land is used (the sea stays procedural).
+
+**Attribution:** Aerial photography © State of New South Wales (Spatial Services, a business unit of the Department of Customer Service NSW). For current information go to spatial.nsw.gov.au. ©Department of Customer Service 2026-11-15 (date of extraction). Licence: Creative Commons Attribution 4.0, https://creativecommons.org/licenses/by/4.0/. The coarse level's far west and sea fill is Landsat 8 (2014), public domain, courtesy of the U.S. Geological Survey.

@@ -36,7 +36,9 @@ export const planetVert = /* glsl */ `
   uniform mat4 uCamWorld;
   varying vec3 vDir;
   void main() {
-    vec4 v = uInvProj * vec4(position.xy, 1.0, 1.0);
+    // unproject on the NEAR plane: at the far plane w = 1/far is the difference of two ~1/near terms, which
+    // cancels to 0 or below in float32 once near is tiny and far is not (the zoom-in end), giving NaN rays
+    vec4 v = uInvProj * vec4(position.xy, -1.0, 1.0);
     v.xyz /= v.w;
     vDir = (uCamWorld * vec4(v.xyz, 0.0)).xyz;
     gl_Position = vec4(position.xy, 0.0, 1.0);
@@ -63,7 +65,39 @@ export const planetFrag = /* glsl */ `
   uniform sampler2D tDay, tNight, tClouds, tSurf, tRegDay, tRegSurf;
   uniform sampler2D tCoast;   // signed distance to the OSM coastline (metres, + land), square around the origin
   uniform float uCoastHalf;   // half-width of that square (units)
+  uniform vec2 uCoastOff;     // centre of that square in the local frame (x, z units)
+  // Near field (hand-over from the human scene, which looks at the same coast; see index.ts):
+  uniform sampler2D tAerC, tAerM; // the human scene's aerial photograph (coarse 25.6 km, mid 8.2 km squares)
+  uniform vec4 uAerC, uAerM;  // centre x, z (local metres, z = south), 1 / (2·half), loaded
+  uniform vec3 uAerGain;      // the human scene's photo calibration (dry sand → its sand albedo)
+  uniform float uLook;        // 0..1: shade the near field with the human scene's light, sea and haze
+  uniform float uPatch;       // 0..1: drape the photograph
   varying vec3 vDir;
+
+  // Mean Blue Marble land albedo ÷ calibrated photo albedo over the photo's land (measured offline, ±11 km).
+  const vec3 K_BM = vec3(0.45, 0.54, 0.33);
+  // The human scene's light and sky model (src/landmarks/human/glsl.ts: uSunCol, skyCol, skyIrr, aerial).
+  const vec3 SUNCOL_H = vec3(1.0, 0.84, 0.66) * 2.6;
+  vec3 skyColH(vec3 d) {
+    float mu = dot(d, uSun);
+    float yy = max(d.y, 0.0);
+    float t = pow(max(1.0 - yy, 1e-6), 4.0);
+    vec3 c = mix(vec3(0.055, 0.15, 0.40), vec3(0.42, 0.52, 0.64), t);
+    float sunSide = pow(max(mu * 0.5 + 0.5, 1e-6), 4.0);
+    c += vec3(0.42, 0.22, 0.05) * sunSide * t;
+    const float g = 0.8;
+    float mie = (1.0 - g * g) / pow(max(1.0 + g * g - 2.0 * g * mu, 1e-6), 1.5);
+    c += vec3(1.0, 0.72, 0.45) * mie * 0.022 * (0.35 + 0.65 * t);
+    c *= 0.9 + 0.12 * mu * mu;
+    float below = smoothstep(0.0, -0.3, d.y);
+    return mix(c, vec3(0.25, 0.30, 0.34) + vec3(0.2, 0.12, 0.05) * sunSide, below * 0.8);
+  }
+  vec3 skyIrrH(vec3 n) {
+    vec3 c = mix(vec3(0.07, 0.075, 0.04), vec3(0.16, 0.25, 0.42), smoothstep(0.0, 1.0, n.y * 0.5 + 0.5));
+    return c + vec3(0.16, 0.11, 0.06) * max(dot(n, uSun), 0.0);
+  }
+  // how much of the human look applies at local metres qm (it is confined to the region around the anchor)
+  float lookAt(vec2 qm) { return uLook * (1.0 - smoothstep(20000.0, 70000.0, length(qm))); }
 
   // ------------------------------------------------------------ precise sphere maths
   // q(p) = |p - C|^2 - R^2 for C = (0,-R,0)
@@ -233,6 +267,8 @@ export const planetFrag = /* glsl */ `
     vec3 nc = normalize(Pc + vec3(0.0, R_E, 0.0));
     vec2 uvc = geoUV(toGeo(nc)) + vec2(uCloudRot / (2.0 * PI), 0.0);
     Grad gdc = seamGrad(uvc);
+    vec2 qA = P.xz * UNIT_M;            // local metres (x east, z south), for the near-field photograph
+    vec2 dqx = dFdx(qA), dqy = dFdy(qA);
 
     if (!inAtm || ta1 <= 0.0) { gl_FragColor = vec4(0.0); return; }
 
@@ -308,7 +344,7 @@ export const planetFrag = /* glsl */ `
       // from the OpenStreetMap coastline (good to a few metres); elsewhere from the imagery's water mask.
       float texelM = texel * UNIT_M;
       float distTile = (0.5 - (sf.r + dn.z * 0.22 * wd)) * 2.0 * texelM;
-      vec2 cuv = vec2(P.x, -P.z) / (2.0 * uCoastHalf) + 0.5;
+      vec2 cuv = vec2(P.x - uCoastOff.x, uCoastOff.y - P.z) / (2.0 * uCoastHalf) + 0.5;
       float cw = smoothstep(0.0, 0.07, min(min(cuv.x, 1.0 - cuv.x), min(cuv.y, 1.0 - cuv.y))) * step(-0.001, P.y);
       float dist = distTile;
       if (cw > 0.0) {
@@ -362,8 +398,34 @@ export const planetFrag = /* glsl */ `
         alb = mix(alb, detailCol, wd);
       }
       #endif
+      // ---- near field: the human scene's aerial photograph, with a wide soft edge. albH is the albedo
+      // in the human scene's terms (Blue Marble lifted by 1/K_BM to the photo's mean); alb gets the photo
+      // scaled by K_BM to Blue Marble's mean, so neither look shows the patch's outline.
+      float look = lookAt(qA);
+      vec3 albH = alb / K_BM;
+      if (uPatch > 0.0 && uAerC.w > 0.5) {
+        vec2 uvC = (qA - uAerC.xy) * uAerC.z + 0.5;
+        float wPh = smoothstep(0.5, 0.24, max(abs(uvC.x - 0.5), abs(uvC.y - 0.5))) * uPatch;
+        if (wPh > 0.0) {
+          vec3 ph = textureGrad(tAerC, uvC, dqx * uAerC.z, dqy * uAerC.z).rgb;
+          if (uAerM.w > 0.5) {
+            vec2 uvM = (qA - uAerM.xy) * uAerM.z + 0.5;
+            float wM = smoothstep(0.5, 0.4, max(abs(uvM.x - 0.5), abs(uvM.y - 0.5)));
+            if (wM > 0.0) ph = mix(ph, textureGrad(tAerM, uvM, dqx * uAerM.z, dqy * uAerM.z).rgb, wM);
+          }
+          ph *= uAerGain;
+          alb = mix(alb, ph * K_BM, wPh);
+          albH = mix(albH, ph, wPh);
+        }
+      }
       float ndl = max(dot(nn, L), 0.0);
       vec3 land = alb * 1.35 * (uSunE / PI * Ts * ndl * sh + skyAmb * 0.8);
+      if (look > 0.0) {
+        // lit as the human terrain lights its photo-draped ground (a flattened normal: the photo holds the shading)
+        vec3 nH = normalize(mix(nn, n, 0.6));
+        vec3 landH = albH * (SUNCOL_H * max(dot(nH, L), 0.0) * sh + skyIrrH(n) * 1.2);
+        land = mix(land, landH, look);
+      }
 
       // ---- ocean
       float unres;
@@ -386,19 +448,29 @@ export const planetFrag = /* glsl */ `
       vec3 skyRefl = uSunE * vec3(0.03, 0.06, 0.125) * daylight * (0.6 + 0.4 * sh);
       vec3 waterBody = mix(vec3(0.0035, 0.010, 0.026), vec3(0.010, 0.032, 0.040), max(smoothstep(0.80, 0.97, sf.b), smoothstep(-500.0, -40.0, dist) * cw));
       vec3 ocean = waterBody * (uSunE / PI * Ts * max(mu, 0.0) * sh * 0.8 + skyAmb) * (1.0 - Fv) + skyRefl * Fv + spec;
+      if (look > 0.0) {
+        // the human scene's sea: turquoise over the sand near shore, blue-green offshore (depth from the
+        // distance to the shore, ~1.8 m per 100 m off Woonona Beach), its sky reflection and light
+        float depthH = max(-dist, 0.0) * 0.018;
+        vec3 body = mix(vec3(0.02, 0.11, 0.1), vec3(0.004, 0.022, 0.036), smoothstep(1.0, 14.0, depthH));
+        body += vec3(0.3, 0.26, 0.19) * exp(-depthH * vec3(0.55, 0.16, 0.11)) * 0.5 * smoothstep(6.0, 0.5, depthH);
+        vec3 litH = SUNCOL_H * max(L.y, 0.0) * 0.55 + skyIrrH(vec3(0.0, 1.0, 0.0));
+        vec3 oceanH = body * litH * (1.0 - Fv) + skyColH(reflect(rd, wN)) * Fv + spec;
+        ocean = mix(ocean, oceanH, look);
+      }
       // surf and whitecaps when close
       #if DETAIL_OCT > 0
       if (wd > 0.0) {
         // surf zone: a few lines of broken water over ~150 m, broken up along the beach, then the swash
         float dS = dist + dn.y * 10.0;
-        float zone = smoothstep(-170.0, -60.0, dS) * water;
+        float zone = smoothstep(mix(-170.0, -120.0, look), mix(-60.0, -40.0, look), dS) * water; // narrower in the human look
         float res = 1.0 - smoothstep(6.0, 25.0, fpm);
         float along = smoothstep(-0.2, 0.5, dn.x + 0.25 * sin(uTime * 0.3 + dn.z * 6.0));
         float line = smoothstep(0.82, 0.97, sin(dS * 0.11 - uTime * 0.9) * 0.5 + 0.5) * along;
         float foam = zone * mix(0.22, 0.25 + 0.7 * line, res);
         foam = max(foam, smoothstep(-28.0, -6.0, dS) * water * 0.85); // swash
         float wet = smoothstep(-12.0, -2.0, dist) * water;
-        float caps = smoothstep(0.80, 0.95, vnoise3(vec3(xm / 9.0, uTime * 0.25)).x * 0.5 + 0.5) * (1.0 - smoothstep(1.5, 6.0, fpm));
+        float caps = smoothstep(0.80, 0.95, vnoise3(vec3(xm / 9.0, uTime * 0.25)).x * 0.5 + 0.5) * (1.0 - smoothstep(1.5, 6.0, fpm)) * (1.0 - look);
         foam = clamp(foam + caps * 0.5, 0.0, 1.0) * wd;
         ocean = mix(ocean, vec3(0.5) * (uSunE / PI * Ts * max(mu, 0.0) * sh + skyAmb), foam);
         ocean = mix(ocean, vec3(0.24, 0.21, 0.15) * (uSunE / PI * Ts * max(mu, 0.0) * sh + skyAmb) + spec * 0.5, wet * wd * 0.8);
@@ -465,6 +537,20 @@ export const planetFrag = /* glsl */ `
     S *= uSunE;
 
     vec3 col = surf * T + S;
+    if (uLook > 0.0) {
+      // near field: the human scene's aerial perspective instead of the full atmosphere
+      float camM = max(camH, 0.0) * UNIT_M;
+      if (hitG) {
+        float look = lookAt(qA);
+        if (look > 0.0) {
+          float od = tg0 * UNIT_M * exp(-0.5 * camM / 1400.0) / 21000.0;
+          vec3 hz = skyColH(normalize(vec3(rd.x, max(rd.y, 0.015), rd.z))) * 1.05;
+          col = mix(col, mix(surf, hz, 1.0 - exp(-od)), look);
+        }
+      } else {
+        col = mix(col, skyColH(rd), uLook * (1.0 - smoothstep(8000.0, 30000.0, camM)));
+      }
+    }
     float alpha = hitG ? 1.0 : clamp(1.0 - dot(T, vec3(0.333)) * (1.0 - alphaSurf) + 0.0, 0.0, 1.0);
 
     // the Sun's disc seen from inside the air

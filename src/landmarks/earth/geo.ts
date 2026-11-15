@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 
 /** Woonona Beach standing spot — must match ORIGIN_LAT/LON of the human landmark (src/landmarks/human/site.ts). */
-export const ORIGIN = { lat: -34.357798, lon: 150.919131 };
+export const ORIGIN = { lat: -34.357726, lon: 150.919337 };
 /** Wollongong city centre, for a secondary label. */
 export const WOLLONGONG = { lat: -34.4251, lon: 150.8931 };
 export const R = 0.5;

@@ -25,7 +25,7 @@ const meta: LandmarkMeta = {
   howWeKnow: {
     instrument: 'Satellites and GPS',
     text:
-      'The pictures here are real NASA satellite photos stitched together. Satellites tracked by lasers and GPS measure Earth’s size and shape to within centimetres. Over 2,200 years ago, Eratosthenes estimated it using shadows and a little geometry.',
+      'The pictures here are real NASA satellite photos stitched together. Satellites tracked by lasers and GPS measure Earth’s size and shape to within centimetres. Over 2,200 years ago, Eratosthenes estimated it using shadows and a little geometry. Close to Woonona Beach, the ground is an aerial photograph: © State of New South Wales (Spatial Services, a business unit of the Department of Customer Service NSW), CC BY 4.0, extracted 15 November 2026.',
   },
   lightTime: 'About 42 milliseconds to cross Earth’s diameter',
   timescale: 'One spin: 24 hours. One trip around the Sun: 365¼ days',
@@ -44,8 +44,20 @@ const REGION = { lon0: 146.625, lat0: -30.1542, span: 2048 / 240 };
 // Sun: a summer morning at Woonona Beach, low over the Tasman Sea to the east-north-east.
 const SUN_AZ = 72, SUN_EL = 22;
 const CLOUD_H = 2500 / UNIT_M;
-// OSM coastline signed-distance square (coast_sdf.png, 1024², ±14 km around the origin).
+// OSM coastline signed-distance square (coast_sdf.png, 1024², ±14 km). It was baked around an earlier
+// anchor 19 m west and 8 m south of the current one (tools/build-earth-coast.py), hence the offset.
 const COAST_HALF_M = 14000;
+const COAST_OFF_M: [number, number] = [-18.95, 7.99];
+
+// Near field: the human scene's NSW aerial photograph (public/assets/human/aerial*.webp, extents in
+// aerial.json, map metres about the same anchor), draped while zoomed in so the hand-over keeps the
+// same ground. Fetched lazily (only below ZOOM_PHOTO), coarse level on every tier, mid level on medium/high.
+const ZOOM_PHOTO = -1.3;
+/** The human scene's dry-sand albedo its photo is calibrated to (src/landmarks/human/aerial.ts SAND_ALB). */
+const SAND_ALB = [0.47, 0.39, 0.255];
+const midFile = (q: Quality) => (q === 'high' ? 2048 : q === 'medium' ? 1024 : 0);
+interface AerialLevel { centre: [number, number]; half: number; files: Record<string, string> }
+interface AerialJson { levels: { mid: AerialLevel; coarse: AerialLevel }; sandLinear: [number, number, number] }
 
 interface TexSet { day: THREE.Texture; night: THREE.Texture; surf: THREE.Texture; regDay: THREE.Texture; regSurf: THREE.Texture; globalW: number; regionW: number }
 const tierFiles = (q: Quality) => (q === 'high' ? { g: 4096, r: 2048 } : q === 'medium' ? { g: 2048, r: 2048 } : { g: 2048, r: 1024 });
@@ -99,7 +111,69 @@ const factory: LandmarkFactory = () => {
     tRegSurf: { value: null as THREE.Texture | null },
     tCoast: { value: null as THREE.Texture | null },
     uCoastHalf: { value: COAST_HALF_M / UNIT_M },
+    uCoastOff: { value: new THREE.Vector2(COAST_OFF_M[0] / UNIT_M, COAST_OFF_M[1] / UNIT_M) },
+    tAerC: { value: null as THREE.Texture | null },
+    tAerM: { value: null as THREE.Texture | null },
+    uAerC: { value: new THREE.Vector4(0, 0, 1, 0) },
+    uAerM: { value: new THREE.Vector4(0, 0, 1, 0) },
+    uAerGain: { value: new THREE.Vector3(1, 1, 1) },
+    uLook: { value: 1 },
+    uPatch: { value: 1 },
   };
+
+  // ---------------------------------------------------------------- near-field photograph (lazy)
+  let aerJson: AerialJson | null | undefined; // undefined: not fetched yet; null: unavailable
+  let aerC: THREE.Texture | null = null;
+  let aerM: { size: number; t: THREE.Texture } | null = null;
+  let aerBusy = false;
+  const aerLoad = async (file: string) => {
+    const t = await loader.loadAsync(assetUrl(`../human/${file}`));
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.flipY = false; // row 0 = north
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.anisotropy = renderer ? Math.min(8, renderer.capabilities.getMaxAnisotropy()) : 1;
+    t.needsUpdate = true;
+    return t;
+  };
+  const setLevel = (u: THREE.Vector4, L: AerialLevel, on: boolean) => u.set(L.centre[0], L.centre[1], 1 / (2 * L.half), on ? 1 : 0);
+  /** Fetches whatever the near field still lacks for the current tier (one request chain at a time). */
+  const ensurePhoto = async () => {
+    if (aerBusy || disposed) return;
+    aerBusy = true;
+    try {
+      if (aerJson === undefined) {
+        try {
+          const r = await fetch(assetUrl('../human/aerial.json'));
+          if (!r.ok) throw new Error(String(r.status));
+          aerJson = (await r.json()) as AerialJson;
+          const sl = aerJson.sandLinear;
+          uniforms.uAerGain.value.set(SAND_ALB[0] / Math.max(sl[0], 1e-3), SAND_ALB[1] / Math.max(sl[1], 1e-3), SAND_ALB[2] / Math.max(sl[2], 1e-3));
+        } catch (err) { aerJson = null; console.warn('[earth] near-field photo unavailable', err); }
+      }
+      const J = aerJson;
+      if (!J || disposed) return;
+      if (!aerC) {
+        const t = await aerLoad(J.levels.coarse.files['2048']);
+        if (disposed) { t.dispose(); return; }
+        aerC = t; uniforms.tAerC.value = t; setLevel(uniforms.uAerC.value, J.levels.coarse, true);
+      }
+      const want = midFile(tier);
+      if (want !== (aerM?.size ?? 0)) {
+        if (!want) { aerM?.t.dispose(); aerM = null; uniforms.tAerM.value = null; uniforms.uAerM.value.w = 0; return; }
+        const t = await aerLoad(J.levels.mid.files[String(want)]);
+        if (disposed || midFile(tier) !== want) { t.dispose(); return; }
+        aerM?.t.dispose();
+        aerM = { size: want, t }; uniforms.tAerM.value = t; setLevel(uniforms.uAerM.value, J.levels.mid, true);
+      }
+    } catch (err) {
+      console.warn('[earth] near-field photo failed to load', err);
+    } finally {
+      aerBusy = false;
+    }
+  };
+  let aerTries = 0;
 
   const planetMat = new THREE.ShaderMaterial({
     vertexShader: planetVert,
@@ -270,6 +344,15 @@ const factory: LandmarkFactory = () => {
         starMat.uniforms.uDist.value = cam.position.length() * 20 + 1;
         starMat.uniforms.uScale.value = renderer ? renderer.getPixelRatio() : 1;
       }
+      // the near field: the human scene's look (light, sea, haze) hands over to this scene's own by s ≈ 5.2;
+      // its photograph is draped until s ≈ 5.1 (colour-matched to Blue Marble at its edges and from afar)
+      const z = frame.zoom;
+      uniforms.uLook.value = 1 - THREE.MathUtils.smoothstep(z, -3.35, -1.9);
+      uniforms.uPatch.value = 1 - THREE.MathUtils.smoothstep(z, -3.0, -2.0);
+      if (z < ZOOM_PHOTO && aerJson !== null && !aerBusy && aerTries < 3 && (!aerC || midFile(tier) !== (aerM?.size ?? 0))) {
+        aerTries++;
+        void ensurePhoto().then(() => { if (aerC && midFile(tier) === (aerM?.size ?? 0)) aerTries = 0; });
+      }
       planet.visible = !!texSet;
     },
 
@@ -279,6 +362,7 @@ const factory: LandmarkFactory = () => {
       tier = qt;
       applyTierShader(qt);
       buildStars(qt);
+      aerTries = 0; // the near field's mid level follows the tier (picked up in update while zoomed in)
       if (old.g === next.g && old.r === next.r) return;
       const token = ++loadToken;
       void loadSet(qt).then((s) => {
@@ -295,6 +379,8 @@ const factory: LandmarkFactory = () => {
       disposeSet(texSet); texSet = null;
       clouds?.dispose(); clouds = null;
       coast?.dispose(); coast = null;
+      aerC?.dispose(); aerC = null; aerM?.t.dispose(); aerM = null;
+      uniforms.tAerC.value = null; uniforms.tAerM.value = null;
       quadGeo.dispose(); planetMat.dispose();
       if (stars) stars.geometry.dispose();
       starMat.dispose();
