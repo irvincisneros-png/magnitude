@@ -65,7 +65,7 @@ button { font: inherit; color: inherit; }
   box-shadow: 0 0 8px var(--accent);
 }
 .anchor {
-  position: absolute; top: calc(22px + var(--safe-t)); left: calc(24px + var(--safe-l));
+  position: absolute; top: calc(66px + var(--safe-t)); left: calc(24px + var(--safe-l)); /* below the hub-link pill */
   pointer-events: none; display: grid; gap: 12px;
 }
 .anchor-read { display: grid; gap: 1px; }
@@ -293,7 +293,7 @@ button { font: inherit; color: inherit; }
 }
 
 /* ---------------------------------------------------------------- narrow screens (phones) */
-.narrow .anchor { top: calc(14px + var(--safe-t)); left: calc(16px + var(--safe-l)); gap: 8px; }
+.narrow .anchor { top: calc(68px + var(--safe-t)); left: calc(16px + var(--safe-l)); gap: 8px; }
 .narrow .anchor-read { justify-items: start; }
 .narrow .anchor-sci { min-height: 15px; } /* keep the row when it is empty (Planck) so the chip below never rides up under the toolbar */
 .anchor-label, .anchor-sci { text-shadow: 0 0 6px rgba(0, 0, 0, 0.55), 0 1px 14px rgba(0, 0, 0, 0.5); }
